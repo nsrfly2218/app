@@ -41,7 +41,8 @@
           class="w-full aspect-square flex items-center justify-center mb-12"
         >
           <div
-            class="w-10 h-10 bg-blue-600 dark:bg-blue-500 rounded-lg flex items-center justify-center"
+            class="w-10 h-10 rounded-lg flex items-center justify-center"
+            style="background-color: #0090D6;"
           >
             <i class="hgi-stroke hgi-flash text-white text-[24px]"></i>
           </div>
@@ -74,7 +75,7 @@
           data-section="chats"
         >
           <i
-            class="hgi-stroke hgi-bubble-chat text-[24px]"
+            class="hgi-stroke hgi-chat-feedback-01 text-[24px]"
             style="color: #003e5c"
           ></i>
           <div
@@ -282,8 +283,8 @@
       <!-- Top Bar -->
       <header
         id="topbar"
-        class="fixed top-0 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-4 z-40 topbar"
-        style="height: 60px"
+        class="fixed top-0 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-4 topbar"
+        style="height: 60px; z-index: 60;"
       >
         <div class="flex items-center gap-4">
           <button
@@ -493,12 +494,13 @@
           </div>
           <button
             id="new-chat-btn"
-            class="hidden flex items-center gap-2 px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors duration-150"
+            class="hidden flex items-center gap-2 px-4 py-2 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors duration-150"
+            style="background-color: #DBF3FF; color: #003E5C;"
             data-text-ar="محادثة جديدة"
             data-text-en="New Chat"
           >
-            <i class="hgi-stroke hgi-plus text-[16px]"></i>
-            <span class="text-sm font-medium">محادثة جديدة</span>
+            <i class="hgi-stroke hgi-plus text-[16px]" style="color: #003E5C;"></i>
+            <span class="text-sm font-medium" style="color: #003E5C;">محادثة جديدة</span>
           </button>
         </div>
 

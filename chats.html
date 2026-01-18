@@ -73,7 +73,8 @@
           class="w-full aspect-square flex items-center justify-center mb-12"
         >
           <div
-            class="w-10 h-10 bg-blue-600 dark:bg-blue-500 rounded-lg flex items-center justify-center"
+            class="w-10 h-10 rounded-lg flex items-center justify-center"
+            style="background-color: #0090D6;"
           >
             <i class="hgi-stroke hgi-flash text-white text-[24px]"></i>
           </div>
@@ -169,7 +170,7 @@
           data-section="orders"
         >
           <i
-            class="hgi-stroke hgi-package text-[24px]"
+            class="hgi-stroke hgi-package-01 text-[24px]"
             style="color: #003e5c"
           ></i>
           <div
@@ -189,7 +190,7 @@
           class="sidebar-first-item w-[40px] h-[40px] flex items-center justify-center rounded-lg mb-4 cursor-pointer relative text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100 transition-all duration-150 overflow-visible"
           data-section="customers"
         >
-          <i class="hgi-stroke hgi-user text-[24px]" style="color: #003e5c"></i>
+          <i class="hgi-stroke hgi-user-03 text-[24px]" style="color: #003e5c"></i>
           <div
             class="tooltip absolute bg-slate-900 dark:bg-slate-700 text-white dark:text-slate-100 px-2 py-1 rounded-md text-xs whitespace-nowrap opacity-0 pointer-events-none transform transition-all duration-150 z-[100] shadow-lg tooltip-element"
             data-text-ar="العملاء"
@@ -314,8 +315,8 @@
       <!-- Top Bar -->
       <header
         id="topbar"
-        class="fixed top-0 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-4 z-40 topbar"
-        style="height: 60px"
+        class="fixed top-0 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-4 topbar"
+        style="height: 60px; z-index: 60;"
       >
         <div class="flex items-center gap-4">
           <button
@@ -535,12 +536,13 @@
           </div>
           <button
             id="new-chat-btn"
-            class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 dark:bg-blue-500 text-white rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors duration-150"
+            class="flex items-center gap-1.5 px-3 py-1.5 text-white rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors duration-150"
+            style="background-color: #DBF3FF; color: #003E5C;"
             data-text-ar="محادثة جديدة"
             data-text-en="New Chat"
           >
-            <i class="hgi-stroke hgi-plus text-sm"></i>
-            <span class="text-xs font-medium">محادثة جديدة</span>
+            <i class="hgi-stroke hgi-plus text-sm" style="color: #003E5C;"></i>
+            <span class="text-xs font-medium" style="color: #003E5C;">محادثة جديدة</span>
           </button>
         </div>
 
@@ -730,13 +732,13 @@
           <!-- Filter Button -->
           <button
             id="filter-btn"
-            class="flex items-center gap-1.5 px-3 text-xs bg-blue-600 dark:bg-blue-500 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors duration-150"
-            style="height: 30px;"
+            class="flex items-center gap-1.5 px-3 text-xs text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors duration-150"
+            style="height: 30px; background-color: #DBF3FF; color: #003E5C;"
             data-text-ar="فلترة"
             data-text-en="Filter"
           >
-            <i class="hgi-stroke hgi-filter text-sm"></i>
-            <span class="text-xs font-medium">فلترة</span>
+            <i class="hgi-stroke hgi-filter text-sm" style="color: #003E5C;"></i>
+            <span class="text-xs font-medium" style="color: #003E5C;">فلترة</span>
           </button>
         </div>
 

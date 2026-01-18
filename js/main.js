@@ -787,10 +787,14 @@ const menuManager = {
           "dark:text-slate-400"
         );
         firstSidebarItems[activeIndex].classList.add(
-          "text-blue-600",
-          "dark:text-blue-400"
+          "text-white"
         );
         firstSidebarItems[activeIndex].style.backgroundColor = "#0090D6";
+        // Update icon color to white
+        const icon = firstSidebarItems[activeIndex].querySelector("i");
+        if (icon) {
+          icon.style.color = "#ffffff";
+        }
 
         // Update second sidebar after a small delay to prevent flickering
         requestAnimationFrame(() => {
@@ -839,12 +843,22 @@ const menuManager = {
             ".sidebar-second-item, .sidebar-second-submenu-item"
           )
           .forEach((i) => {
-            i.classList.remove("text-blue-600", "dark:text-blue-400");
+            i.classList.remove("text-white");
             i.style.backgroundColor = "";
+            // Reset icon and text colors
+            const icon = i.querySelector("i");
+            const text = i.querySelector(".sidebar-second-item-text");
+            if (icon) icon.style.color = "#003E5C";
+            if (text) text.style.color = "#003E5C";
           });
         // Add active to clicked item
-        item.classList.add("text-blue-600", "dark:text-blue-400");
+        item.classList.add("text-white");
         item.style.backgroundColor = "#0090D6";
+        // Update icon and text colors to white
+        const icon = item.querySelector("i");
+        const text = item.querySelector(".sidebar-second-item-text");
+        if (icon) icon.style.color = "#ffffff";
+        if (text) text.style.color = "#ffffff";
 
         // Update page title
         const pageTitle = item.textContent.trim();
@@ -864,12 +878,22 @@ const menuManager = {
             ".sidebar-second-item, .sidebar-second-submenu-item"
           )
           .forEach((i) => {
-            i.classList.remove("text-blue-600", "dark:text-blue-400");
+            i.classList.remove("text-white");
             i.style.backgroundColor = "";
+            // Reset icon and text colors
+            const icon = i.querySelector("i");
+            const text = i.querySelector(".sidebar-second-item-text");
+            if (icon) icon.style.color = "#003E5C";
+            if (text) text.style.color = "#003E5C";
           });
         // Add active to clicked item
-        item.classList.add("text-blue-600", "dark:text-blue-400");
+        item.classList.add("text-white");
         item.style.backgroundColor = "#0090D6";
+        // Update icon and text colors to white
+        const icon = item.querySelector("i");
+        const text = item.querySelector(".sidebar-second-item-text");
+        if (icon) icon.style.color = "#ffffff";
+        if (text) text.style.color = "#ffffff";
 
         // Update page title
         const pageTitle =
@@ -971,8 +995,13 @@ const menuManager = {
       ".sidebar-second-item, .sidebar-second-submenu-item"
     );
     allSecondSidebarItems.forEach((item) => {
-      item.classList.remove("text-blue-600", "dark:text-blue-400");
+      item.classList.remove("text-white");
       item.style.backgroundColor = "";
+      // Reset icon and text colors
+      const icon = item.querySelector("i");
+      const text = item.querySelector(".sidebar-second-item-text");
+      if (icon) icon.style.color = "#003E5C";
+      if (text) text.style.color = "#003E5C";
     });
 
     // Find all links in second sidebar and check their href
@@ -990,8 +1019,13 @@ const menuManager = {
               );
 
         if (item) {
-          item.classList.add("text-blue-600", "dark:text-blue-400");
+          item.classList.add("text-white");
           item.style.backgroundColor = "#0090D6";
+          // Update icon and text colors to white
+          const icon = item.querySelector("i");
+          const text = item.querySelector(".sidebar-second-item-text");
+          if (icon) icon.style.color = "#ffffff";
+          if (text) text.style.color = "#ffffff";
         }
       }
     });
@@ -1078,16 +1112,6 @@ const menuManager = {
             name: t.chats,
             iconClass: "hgi-stroke hgi-bubble-chat",
             href: "chats.html",
-          },
-          {
-            name: t.mentions,
-            iconClass: "hgi-stroke hgi-at",
-            href: "mentions.html",
-          },
-          {
-            name: t.unattended,
-            iconClass: "hgi-stroke hgi-inbox-unread",
-            href: "unattended.html",
           },
           {
             type: "sectionTitle",
@@ -1228,9 +1252,14 @@ document.addEventListener("DOMContentLoaded", () => {
   // Clear any default active state from HTML before setting up menus
   const firstSidebarItems = document.querySelectorAll(".sidebar-first-item");
   firstSidebarItems.forEach((item) => {
-    item.classList.remove("text-blue-600", "dark:text-blue-400");
+    item.classList.remove("text-white");
     item.classList.add("text-slate-500", "dark:text-slate-400");
     item.style.backgroundColor = "";
+    // Reset icon color
+    const icon = item.querySelector("i");
+    if (icon) {
+      icon.style.color = "#003e5c";
+    }
   });
 
   // Initialize menu manager (this will set the correct active state)
@@ -2203,7 +2232,7 @@ function loadChatsForTab(tabId) {
               <div class="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
                 ${
                   chat.assignedTo
-                    ? `<i class="hgi-stroke hgi-user text-xs" style="color: #003e5c"></i>
+                    ? `<i class="hgi-stroke hgi-customer-support text-xs" style="color: #003e5c"></i>
                        <span class="whitespace-nowrap">${
                          chat.assignedTo.split(" ")[0]
                        }</span>`
