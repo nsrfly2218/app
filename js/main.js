@@ -461,6 +461,67 @@ const languageManager = {
         }
       });
     }
+
+    // Setup Apps Menu
+    const appsBtn = document.getElementById("apps");
+    const appsMenu = document.getElementById("apps-menu");
+    if (appsBtn && appsMenu) {
+      appsBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const isVisible = appsMenu.classList.contains("opacity-0");
+        if (isVisible) {
+          appsMenu.classList.remove(
+            "opacity-0",
+            "invisible",
+            "translate-y-[-10px]"
+          );
+          appsMenu.classList.add("opacity-100", "visible", "translate-y-0");
+        } else {
+          appsMenu.classList.add(
+            "opacity-0",
+            "invisible",
+            "translate-y-[-10px]"
+          );
+          appsMenu.classList.remove("opacity-100", "visible", "translate-y-0");
+        }
+      });
+
+      // Close menu when clicking outside
+      document.addEventListener("click", (e) => {
+        if (!appsBtn.contains(e.target) && !appsMenu.contains(e.target)) {
+          appsMenu.classList.add(
+            "opacity-0",
+            "invisible",
+            "translate-y-[-10px]"
+          );
+          appsMenu.classList.remove("opacity-100", "visible", "translate-y-0");
+        }
+      });
+
+      // Update apps menu position based on direction (RTL/LTR)
+      const updateAppsMenuPosition = () => {
+        const isRTL = document.documentElement.getAttribute("dir") === "rtl";
+        appsMenu.classList.remove("left-0", "right-0");
+        if (isRTL) {
+          appsMenu.classList.add("right-0");
+        } else {
+          appsMenu.classList.add("left-0");
+        }
+      };
+
+      // Update position on load
+      updateAppsMenuPosition();
+
+      // Update apps menu translations and position on language/direction change
+      const observer = new MutationObserver(() => {
+        updateAppsMenuTranslations();
+        updateAppsMenuPosition();
+      });
+      observer.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ["lang", "dir"],
+      });
+    }
   },
 };
 
@@ -1287,6 +1348,9 @@ document.addEventListener("DOMContentLoaded", () => {
   if (themeToggle) {
     themeToggle.addEventListener("click", () => themeManager.toggleTheme());
   }
+
+  // Initialize apps menu translations
+  updateAppsMenuTranslations();
 });
 
 // Setup tooltips for topbar icons
@@ -8488,4 +8552,962 @@ function loadOrders() {
     attributes: true,
     attributeFilter: ["lang"],
   });
+}
+
+// Update Apps Menu Translations
+function updateAppsMenuTranslations() {
+  const appsMenu = document.getElementById("apps-menu");
+  if (!appsMenu) return;
+
+  const currentLang = document.documentElement.getAttribute("lang") || "ar";
+  const appItems = appsMenu.querySelectorAll(".app-item");
+
+  appItems.forEach((item) => {
+    // Find title (the span with text-sm font-medium class)
+    const titleSpan = item.querySelector("span.text-sm.font-medium");
+    
+    // Find description (the span with text-xs class that is inside the flex-col div)
+    const descriptionSpan = item.querySelector("span.text-xs.text-slate-500, span.text-xs.text-slate-400");
+
+    // Update title
+    if (titleSpan) {
+      const textAr = titleSpan.getAttribute("data-text-ar");
+      const textEn = titleSpan.getAttribute("data-text-en");
+      if (textAr && textEn) {
+        titleSpan.textContent = currentLang === "ar" ? textAr : textEn;
+      }
+    }
+
+    // Update description
+    if (descriptionSpan) {
+      const descAr = descriptionSpan.getAttribute("data-text-ar");
+      const descEn = descriptionSpan.getAttribute("data-text-en");
+      if (descAr && descEn) {
+        descriptionSpan.textContent = currentLang === "ar" ? descAr : descEn;
+      }
+    }
+  });
+}
+
+// Help Center Modal Manager
+const helpCenterManager = {
+  modal: null,
+  header: null,
+  closeBtn: null,
+  isDragging: false,
+  currentX: 0,
+  currentY: 0,
+  initialX: 0,
+  initialY: 0,
+  xOffset: 0,
+  yOffset: 0,
+
+  init() {
+    this.modal = document.getElementById("help-center-modal");
+    this.header = document.getElementById("help-center-modal-header");
+    this.closeBtn = document.getElementById("help-center-modal-close");
+    const helpCenterBtn = document.getElementById("help-center");
+
+    if (!this.modal || !this.header || !this.closeBtn || !helpCenterBtn) return;
+
+    // Open modal
+    helpCenterBtn.addEventListener("click", () => {
+      this.openModal();
+    });
+
+    // Close modal
+    this.closeBtn.addEventListener("click", () => {
+      this.closeModal();
+    });
+
+    // Setup drag functionality
+    this.setupDrag();
+
+    // Setup tabs
+    this.setupTabs();
+
+    // Setup search
+    this.setupSearch();
+
+    // Initial position calculation
+    this.setInitialPosition();
+  },
+
+  setInitialPosition() {
+    if (!this.modal) return;
+    const helpCenterBtn = document.getElementById("help-center");
+    if (helpCenterBtn) {
+      const btnRect = helpCenterBtn.getBoundingClientRect();
+      const modalWidth = this.modal.offsetWidth || 400;
+      const modalHeight = this.modal.offsetHeight || 550;
+
+      let left = btnRect.left - modalWidth / 2 + btnRect.width / 2;
+      let top = btnRect.top + btnRect.height + 10;
+
+      // Ensure modal stays within viewport
+      if (left + modalWidth > window.innerWidth) {
+        left = window.innerWidth - modalWidth - 20;
+      }
+      if (left < 0) {
+        left = 20;
+      }
+      if (top + modalHeight > window.innerHeight) {
+        top = window.innerHeight - modalHeight - 20;
+      }
+      if (top < 60) {
+        top = 70;
+      }
+
+      this.modal.style.left = left + "px";
+      this.modal.style.top = top + "px";
+      this.modal.style.right = "auto";
+    }
+  },
+
+  openModal() {
+    if (!this.modal) return;
+    this.setInitialPosition();
+    this.modal.classList.remove("opacity-0", "invisible", "translate-y-[-10px]");
+    this.modal.classList.add("opacity-100", "visible", "translate-y-0");
+    // Reset to first tab
+    this.switchTab("getting-started");
+  },
+
+  closeModal() {
+    if (!this.modal) return;
+    this.modal.classList.add("opacity-0", "invisible", "translate-y-[-10px]");
+    this.modal.classList.remove("opacity-100", "visible", "translate-y-0");
+  },
+
+  setupDrag() {
+    if (!this.header || !this.modal) return;
+
+    let startX = 0;
+    let startY = 0;
+    let initialLeft = 0;
+    let initialTop = 0;
+
+    this.header.addEventListener("mousedown", (e) => {
+      if (e.target.closest("#help-center-modal-close")) return;
+      
+      this.isDragging = true;
+      const rect = this.modal.getBoundingClientRect();
+      startX = e.clientX;
+      startY = e.clientY;
+      initialLeft = rect.left;
+      initialTop = rect.top;
+
+      this.modal.style.cursor = "move";
+      this.modal.style.transition = "none";
+      e.preventDefault();
+    });
+
+    const handleMouseMove = (e) => {
+      if (!this.isDragging) return;
+
+      const deltaX = e.clientX - startX;
+      const deltaY = e.clientY - startY;
+
+      let newLeft = initialLeft + deltaX;
+      let newTop = initialTop + deltaY;
+
+      // Ensure modal stays within viewport
+      const modalWidth = this.modal.offsetWidth;
+      const modalHeight = this.modal.offsetHeight;
+
+      if (newLeft < 0) {
+        newLeft = 0;
+      } else if (newLeft + modalWidth > window.innerWidth) {
+        newLeft = window.innerWidth - modalWidth;
+      }
+
+      if (newTop < 0) {
+        newTop = 0;
+      } else if (newTop + modalHeight > window.innerHeight) {
+        newTop = window.innerHeight - modalHeight;
+      }
+
+      this.modal.style.left = newLeft + "px";
+      this.modal.style.top = newTop + "px";
+      this.modal.style.right = "auto";
+      this.modal.style.transform = "none";
+    };
+
+    document.addEventListener("mousemove", handleMouseMove);
+
+    document.addEventListener("mouseup", () => {
+      if (this.isDragging) {
+        this.isDragging = false;
+        this.modal.style.cursor = "default";
+        this.modal.style.transition = "";
+      }
+    });
+  },
+
+  setupTabs() {
+    const tabButtons = document.querySelectorAll(".help-tab-btn");
+    tabButtons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const tabName = btn.getAttribute("data-tab");
+        this.switchTab(tabName);
+      });
+    });
+  },
+
+  switchTab(tabName) {
+    // Hide all tab contents
+    const tabContents = document.querySelectorAll(".help-tab-content");
+    tabContents.forEach((content) => {
+      content.classList.add("hidden");
+    });
+
+    // Show selected tab content
+    const selectedContent = document.getElementById(`help-tab-${tabName}`);
+    if (selectedContent) {
+      selectedContent.classList.remove("hidden");
+    }
+
+    // Update tab buttons
+    const tabButtons = document.querySelectorAll(".help-tab-btn");
+    tabButtons.forEach((btn) => {
+      const btnTab = btn.getAttribute("data-tab");
+      if (btnTab === tabName) {
+        btn.classList.add(
+          "text-blue-600",
+          "dark:text-blue-400",
+          "border-b-2",
+          "border-blue-600",
+          "dark:border-blue-400"
+        );
+        btn.classList.remove(
+          "text-slate-600",
+          "dark:text-slate-400"
+        );
+      } else {
+        btn.classList.remove(
+          "text-blue-600",
+          "dark:text-blue-400",
+          "border-b-2",
+          "border-blue-600",
+          "dark:border-blue-400"
+        );
+        btn.classList.add("text-slate-600", "dark:text-slate-400");
+      }
+    });
+  },
+
+  setupSearch() {
+    const searchInput = document.getElementById("help-search-input");
+    if (!searchInput) return;
+
+    searchInput.addEventListener("input", (e) => {
+      const query = e.target.value.toLowerCase().trim();
+      this.searchHelp(query);
+    });
+  },
+
+  searchHelp(query) {
+    if (!query) {
+      // Show all items
+      const allItems = document.querySelectorAll(".help-tab-content a");
+      allItems.forEach((item) => {
+        item.style.display = "block";
+      });
+      return;
+    }
+
+    // Search in all tabs
+    const allItems = document.querySelectorAll(".help-tab-content a");
+    allItems.forEach((item) => {
+      const title = item.querySelector(".font-medium")?.textContent?.toLowerCase() || "";
+      const description = item.querySelector(".text-xs")?.textContent?.toLowerCase() || "";
+      const itemText = title + " " + description;
+
+      if (itemText.includes(query)) {
+        item.style.display = "block";
+      } else {
+        item.style.display = "none";
+      }
+    });
+  },
+};
+
+// Search Modal Manager
+const searchManager = {
+  modal: null,
+  input: null,
+  resultsContainer: null,
+  resultsDiv: null,
+  historyDiv: null,
+  historyListDiv: null,
+  noResultsDiv: null,
+  selectedIndex: -1,
+  searchResults: [],
+  searchHistory: [],
+
+  // Available pages to search
+  pages: [
+    { title: "لوحة التحكم", titleEn: "Dashboard", path: "index.html", description: "الصفحة الرئيسية", descriptionEn: "Main page" },
+    { title: "المحادثات", titleEn: "Chats", path: "chats.html", description: "إدارة المحادثات", descriptionEn: "Manage conversations" },
+    { title: "التدفقات", titleEn: "Flows", path: "flows.html", description: "إنشاء تدفقات العمل", descriptionEn: "Create workflows" },
+    { title: "الذكاء الاصطناعي", titleEn: "AI", path: "ai.html", description: "أدوات الذكاء الاصطناعي", descriptionEn: "AI tools" },
+    { title: "الطلبات", titleEn: "Orders", path: "orders.html", description: "إدارة الطلبات", descriptionEn: "Manage orders" },
+    { title: "العملاء", titleEn: "Customers", path: "customers.html", description: "إدارة العملاء", descriptionEn: "Manage customers" },
+    { title: "المنتجات", titleEn: "Products", path: "products.html", description: "إدارة المنتجات", descriptionEn: "Manage products" },
+    { title: "المتاجر", titleEn: "Stores", path: "stores.html", description: "إدارة المتاجر", descriptionEn: "Manage stores" },
+    { title: "المكتبة", titleEn: "Library", path: "library.html", description: "الموارد والمكتبات", descriptionEn: "Resources and libraries" },
+    { title: "الإعدادات", titleEn: "Settings", path: "settings.html", description: "إعدادات النظام", descriptionEn: "System settings" },
+  ],
+
+  init() {
+    this.modal = document.getElementById("search-modal");
+    this.input = document.getElementById("search-modal-input");
+    this.resultsContainer = document.getElementById("search-results-container");
+    this.resultsDiv = document.getElementById("search-results");
+    this.historyDiv = document.getElementById("search-history");
+    this.historyListDiv = document.getElementById("search-history-list");
+    this.noResultsDiv = document.getElementById("search-no-results");
+    const searchBtn = document.getElementById("search");
+
+    if (!this.modal || !this.input || !searchBtn) return;
+
+    // Load search history from localStorage
+    this.loadSearchHistory();
+
+    // Open modal
+    searchBtn.addEventListener("click", () => {
+      this.openModal();
+    });
+
+    // Close modal on overlay click
+    this.modal.addEventListener("click", (e) => {
+      if (e.target === this.modal) {
+        this.closeModal();
+      }
+    });
+
+    // Setup search input
+    this.setupSearchInput();
+
+    // Setup keyboard navigation
+    this.setupKeyboardNavigation();
+  },
+
+  loadSearchHistory() {
+    const history = localStorage.getItem("searchHistory");
+    if (history) {
+      try {
+        this.searchHistory = JSON.parse(history);
+      } catch (e) {
+        this.searchHistory = [];
+      }
+    }
+    this.renderSearchHistory();
+  },
+
+  saveSearchHistory() {
+    localStorage.setItem("searchHistory", JSON.stringify(this.searchHistory));
+  },
+
+  addToHistory(query) {
+    if (!query.trim()) return;
+    
+    // Remove if already exists
+    this.searchHistory = this.searchHistory.filter((item) => item !== query);
+    
+    // Add to beginning
+    this.searchHistory.unshift(query);
+    
+    // Keep only last 10
+    if (this.searchHistory.length > 10) {
+      this.searchHistory = this.searchHistory.slice(0, 10);
+    }
+    
+    this.saveSearchHistory();
+    this.renderSearchHistory();
+  },
+
+  renderSearchHistory() {
+    if (!this.historyListDiv) return;
+    
+    if (this.searchHistory.length === 0) {
+      this.historyListDiv.innerHTML = `
+        <p class="text-sm text-slate-400 dark:text-slate-500 text-center py-4" data-text-ar="لا توجد عمليات بحث سابقة" data-text-en="No recent searches">لا توجد عمليات بحث سابقة</p>
+      `;
+      return;
+    }
+
+    const currentLang = document.documentElement.getAttribute("lang") || "ar";
+    
+    this.historyListDiv.innerHTML = this.searchHistory
+      .map(
+        (query, index) => `
+          <button
+            class="search-history-item w-full text-right px-4 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors duration-150 text-sm text-slate-700 dark:text-slate-300"
+            data-query="${query}"
+          >
+            <div class="flex items-center justify-between">
+              <span>${query}</span>
+              <i class="hgi-stroke hgi-arrow-left-01 text-xs text-slate-400"></i>
+            </div>
+          </button>
+        `
+      )
+      .join("");
+
+    // Add click listeners to history items
+    this.historyListDiv.querySelectorAll(".search-history-item").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const query = btn.getAttribute("data-query");
+        this.input.value = query;
+        this.performSearch(query);
+      });
+    });
+  },
+
+  setupSearchInput() {
+    if (!this.input) return;
+
+    this.input.addEventListener("input", (e) => {
+      const query = e.target.value.trim();
+      if (query) {
+        this.performSearch(query);
+      } else {
+        this.showHistory();
+      }
+    });
+
+    this.input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        if (this.selectedIndex >= 0 && this.searchResults.length > 0) {
+          this.selectResult(this.selectedIndex);
+        }
+      }
+    });
+  },
+
+  setupKeyboardNavigation() {
+    document.addEventListener("keydown", (e) => {
+      if (!this.modal || !this.modal.classList.contains("opacity-100")) return;
+
+      if (e.key === "Escape") {
+        this.closeModal();
+        return;
+      }
+
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        this.navigateResults(1);
+        return;
+      }
+
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        this.navigateResults(-1);
+        return;
+      }
+    });
+  },
+
+  navigateResults(direction) {
+    if (!this.searchResults.length) return;
+
+    this.selectedIndex += direction;
+
+    if (this.selectedIndex < 0) {
+      this.selectedIndex = this.searchResults.length - 1;
+    } else if (this.selectedIndex >= this.searchResults.length) {
+      this.selectedIndex = 0;
+    }
+
+    this.highlightResult(this.selectedIndex);
+    
+    // Scroll into view
+    const selectedElement = this.resultsDiv?.children[this.selectedIndex];
+    if (selectedElement) {
+      selectedElement.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
+  },
+
+  highlightResult(index) {
+    const items = this.resultsDiv?.querySelectorAll(".search-result-item");
+    if (!items) return;
+
+    items.forEach((item, i) => {
+      if (i === index) {
+        item.classList.add("bg-blue-50", "dark:bg-blue-900/20", "ring-2", "ring-blue-500");
+        item.classList.remove("hover:bg-slate-100", "dark:hover:bg-slate-700");
+      } else {
+        item.classList.remove("bg-blue-50", "dark:bg-blue-900/20", "ring-2", "ring-blue-500");
+        item.classList.add("hover:bg-slate-100", "dark:hover:bg-slate-700");
+      }
+    });
+  },
+
+  performSearch(query) {
+    if (!query.trim()) {
+      this.showHistory();
+      return;
+    }
+
+    this.selectedIndex = -1;
+    const currentLang = document.documentElement.getAttribute("lang") || "ar";
+    const queryLower = query.toLowerCase();
+
+    // Filter pages based on search query
+    this.searchResults = this.pages.filter((page) => {
+      const title = currentLang === "ar" ? page.title : page.titleEn;
+      const description = currentLang === "ar" ? page.description : page.descriptionEn;
+      const path = page.path;
+      
+      return (
+        title.toLowerCase().includes(queryLower) ||
+        description.toLowerCase().includes(queryLower) ||
+        path.toLowerCase().includes(queryLower)
+      );
+    });
+
+    this.renderResults();
+
+    // Show history or results
+    if (this.searchResults.length > 0) {
+      this.showResults();
+    } else {
+      this.showNoResults();
+    }
+  },
+
+  renderResults() {
+    if (!this.resultsDiv) return;
+
+    const currentLang = document.documentElement.getAttribute("lang") || "ar";
+
+    this.resultsDiv.innerHTML = this.searchResults
+      .map(
+        (page, index) => `
+          <a
+            href="${page.path}"
+            class="search-result-item block px-4 py-3 rounded-lg transition-colors duration-150 text-right"
+            data-index="${index}"
+          >
+            <div class="flex items-center justify-between">
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
+                    ${currentLang === "ar" ? page.title : page.titleEn}
+                  </span>
+                  <span class="text-xs text-slate-400 dark:text-slate-500 font-mono">${page.path}</span>
+                </div>
+                <p class="text-xs text-slate-500 dark:text-slate-400 truncate">
+                  ${currentLang === "ar" ? page.description : page.descriptionEn}
+                </p>
+              </div>
+              <i class="hgi-stroke hgi-arrow-left-01 text-xs text-slate-400 flex-shrink-0 mr-2"></i>
+            </div>
+          </a>
+        `
+      )
+      .join("");
+
+    // Add click listeners
+    this.resultsDiv.querySelectorAll(".search-result-item").forEach((link) => {
+      link.addEventListener("click", (e) => {
+        const index = parseInt(link.getAttribute("data-index"));
+        this.selectResult(index);
+      });
+    });
+  },
+
+  selectResult(index) {
+    if (index >= 0 && index < this.searchResults.length) {
+      const page = this.searchResults[index];
+      const query = this.input?.value.trim();
+      
+      if (query) {
+        this.addToHistory(query);
+      }
+      
+      window.location.href = page.path;
+    }
+  },
+
+  showHistory() {
+    if (this.historyDiv) this.historyDiv.classList.remove("hidden");
+    if (this.resultsDiv) this.resultsDiv.classList.add("hidden");
+    if (this.noResultsDiv) this.noResultsDiv.classList.add("hidden");
+  },
+
+  showResults() {
+    if (this.historyDiv) this.historyDiv.classList.add("hidden");
+    if (this.resultsDiv) this.resultsDiv.classList.remove("hidden");
+    if (this.noResultsDiv) this.noResultsDiv.classList.add("hidden");
+  },
+
+  showNoResults() {
+    if (this.historyDiv) this.historyDiv.classList.add("hidden");
+    if (this.resultsDiv) this.resultsDiv.classList.add("hidden");
+    if (this.noResultsDiv) this.noResultsDiv.classList.remove("hidden");
+  },
+
+  openModal() {
+    if (!this.modal) return;
+    this.modal.classList.remove("opacity-0", "invisible");
+    this.modal.classList.add("opacity-100", "visible");
+    
+    const modalContent = this.modal.querySelector("div > div");
+    if (modalContent) {
+      modalContent.classList.remove("scale-95");
+      modalContent.classList.add("scale-100");
+    }
+
+    // Focus input after a short delay
+    setTimeout(() => {
+      if (this.input) {
+        this.input.focus();
+        this.input.select();
+      }
+    }, 100);
+
+    // Show history if input is empty
+    if (!this.input.value.trim()) {
+      this.showHistory();
+    }
+  },
+
+  closeModal() {
+    if (!this.modal) return;
+    this.modal.classList.add("opacity-0", "invisible");
+    this.modal.classList.remove("opacity-100", "visible");
+    
+    const modalContent = this.modal.querySelector("div > div");
+    if (modalContent) {
+      modalContent.classList.add("scale-95");
+      modalContent.classList.remove("scale-100");
+    }
+
+    // Clear input and reset
+    if (this.input) {
+      this.input.value = "";
+    }
+    this.selectedIndex = -1;
+    this.searchResults = [];
+  },
+};
+
+// Notifications Dropdown Manager
+const notificationsManager = {
+  dropdown: null,
+  button: null,
+
+  init() {
+    this.dropdown = document.getElementById("notifications-dropdown");
+    this.button = document.getElementById("notifications");
+
+    if (!this.dropdown || !this.button) return;
+
+    // Update dropdown position based on direction
+    this.updateDropdownPosition();
+
+    // Toggle dropdown
+    this.button.addEventListener("click", (e) => {
+      e.stopPropagation();
+      this.toggleDropdown();
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener("click", (e) => {
+      if (
+        this.dropdown &&
+        !this.dropdown.contains(e.target) &&
+        !this.button.contains(e.target)
+      ) {
+        this.closeDropdown();
+      }
+    });
+
+    // Setup tabs
+    this.setupTabs();
+
+    // Watch for direction changes
+    const observer = new MutationObserver(() => {
+      this.updateDropdownPosition();
+    });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["dir", "lang"],
+    });
+  },
+
+  updateDropdownPosition() {
+    if (!this.dropdown) return;
+    const dir = document.documentElement.getAttribute("dir") || "rtl";
+    
+    if (dir === "rtl") {
+      // For RTL, position on the left
+      this.dropdown.style.right = "auto";
+      this.dropdown.style.left = "0";
+    } else {
+      // For LTR, position on the right
+      this.dropdown.style.left = "auto";
+      this.dropdown.style.right = "0";
+    }
+  },
+
+  toggleDropdown() {
+    if (!this.dropdown) return;
+
+    const isVisible = this.dropdown.classList.contains("opacity-0");
+
+    if (isVisible) {
+      this.openDropdown();
+    } else {
+      this.closeDropdown();
+    }
+  },
+
+  openDropdown() {
+    if (!this.dropdown) return;
+    this.dropdown.classList.remove("opacity-0", "invisible", "translate-y-[-10px]");
+    this.dropdown.classList.add("opacity-100", "visible", "translate-y-0");
+    
+    // Switch to first tab (actions)
+    this.switchTab("actions");
+  },
+
+  closeDropdown() {
+    if (!this.dropdown) return;
+    this.dropdown.classList.add("opacity-0", "invisible", "translate-y-[-10px]");
+    this.dropdown.classList.remove("opacity-100", "visible", "translate-y-0");
+  },
+
+  setupTabs() {
+    const tabButtons = document.querySelectorAll(".notifications-tab-btn");
+    tabButtons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const tabName = btn.getAttribute("data-tab");
+        this.switchTab(tabName);
+      });
+    });
+  },
+
+  switchTab(tabName) {
+    // Hide all tab contents
+    const tabContents = document.querySelectorAll(".notifications-tab-content");
+    tabContents.forEach((content) => {
+      content.classList.add("hidden");
+    });
+
+    // Show selected tab content
+    const selectedContent = document.getElementById(`notifications-tab-${tabName}`);
+    if (selectedContent) {
+      selectedContent.classList.remove("hidden");
+    }
+
+    // Update tab buttons
+    const tabButtons = document.querySelectorAll(".notifications-tab-btn");
+    tabButtons.forEach((btn) => {
+      const btnTab = btn.getAttribute("data-tab");
+      if (btnTab === tabName) {
+        btn.classList.add(
+          "text-blue-600",
+          "dark:text-blue-400",
+          "border-b-2",
+          "border-blue-600",
+          "dark:border-blue-400"
+        );
+        btn.classList.remove(
+          "text-slate-600",
+          "dark:text-slate-400"
+        );
+      } else {
+        btn.classList.remove(
+          "text-blue-600",
+          "dark:text-blue-400",
+          "border-b-2",
+          "border-blue-600",
+          "dark:border-blue-400"
+        );
+        btn.classList.add("text-slate-600", "dark:text-slate-400");
+      }
+    });
+  },
+};
+
+// Account Dropdown Manager
+const accountManager = {
+  dropdown: null,
+  button: null,
+
+  init() {
+    this.dropdown = document.getElementById("account-dropdown");
+    this.button = document.getElementById("account");
+
+    if (!this.dropdown || !this.button) return;
+
+    // Update dropdown position based on direction
+    this.updateDropdownPosition();
+
+    // Toggle dropdown
+    this.button.addEventListener("click", (e) => {
+      e.stopPropagation();
+      this.toggleDropdown();
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener("click", (e) => {
+      if (
+        this.dropdown &&
+        !this.dropdown.contains(e.target) &&
+        !this.button.contains(e.target)
+      ) {
+        this.closeDropdown();
+      }
+    });
+
+    // Setup copy store link button
+    const copyStoreLinkBtn = document.getElementById("copy-store-link-btn");
+    if (copyStoreLinkBtn) {
+      copyStoreLinkBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.copyStoreLink();
+      });
+    }
+
+    // Setup profile buttons tooltips
+    const profileEditBtn = document.getElementById("profile-edit-btn");
+    const profileLogoutBtn = document.getElementById("profile-logout-btn");
+    
+    if (profileEditBtn) {
+      const tooltip = profileEditBtn.querySelector(".tooltip-element");
+      if (tooltip) {
+        profileEditBtn.addEventListener("mouseenter", () => {
+          tooltip.classList.remove("opacity-0");
+          tooltip.classList.add("opacity-100");
+          const currentLang = document.documentElement.getAttribute("lang") || "ar";
+          const tooltipText = tooltip.querySelector(".tooltip-text");
+          if (tooltipText) {
+            tooltipText.textContent =
+              currentLang === "ar"
+                ? profileEditBtn.getAttribute("data-text-ar")
+                : profileEditBtn.getAttribute("data-text-en");
+          }
+        });
+        profileEditBtn.addEventListener("mouseleave", () => {
+          tooltip.classList.remove("opacity-100");
+          tooltip.classList.add("opacity-0");
+        });
+      }
+    }
+
+    if (profileLogoutBtn) {
+      const tooltip = profileLogoutBtn.querySelector(".tooltip-element");
+      if (tooltip) {
+        profileLogoutBtn.addEventListener("mouseenter", () => {
+          tooltip.classList.remove("opacity-0");
+          tooltip.classList.add("opacity-100");
+          const currentLang = document.documentElement.getAttribute("lang") || "ar";
+          const tooltipText = tooltip.querySelector(".tooltip-text");
+          if (tooltipText) {
+            tooltipText.textContent =
+              currentLang === "ar"
+                ? profileLogoutBtn.getAttribute("data-text-ar")
+                : profileLogoutBtn.getAttribute("data-text-en");
+          }
+        });
+        profileLogoutBtn.addEventListener("mouseleave", () => {
+          tooltip.classList.remove("opacity-100");
+          tooltip.classList.add("opacity-0");
+        });
+      }
+    }
+
+    // Watch for direction changes
+    const observer = new MutationObserver(() => {
+      this.updateDropdownPosition();
+    });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["dir", "lang"],
+    });
+  },
+
+  updateDropdownPosition() {
+    if (!this.dropdown) return;
+    const dir = document.documentElement.getAttribute("dir") || "rtl";
+    
+    if (dir === "rtl") {
+      // For RTL, position on the left
+      this.dropdown.style.right = "auto";
+      this.dropdown.style.left = "0";
+    } else {
+      // For LTR, position on the right
+      this.dropdown.style.left = "auto";
+      this.dropdown.style.right = "0";
+    }
+  },
+
+  toggleDropdown() {
+    if (!this.dropdown) return;
+
+    const isVisible = this.dropdown.classList.contains("opacity-0");
+
+    if (isVisible) {
+      this.openDropdown();
+    } else {
+      this.closeDropdown();
+    }
+  },
+
+  openDropdown() {
+    if (!this.dropdown) return;
+    this.dropdown.classList.remove("opacity-0", "invisible", "translate-y-[-10px]");
+    this.dropdown.classList.add("opacity-100", "visible", "translate-y-0");
+  },
+
+  closeDropdown() {
+    if (!this.dropdown) return;
+    this.dropdown.classList.add("opacity-0", "invisible", "translate-y-[-10px]");
+    this.dropdown.classList.remove("opacity-100", "visible", "translate-y-0");
+  },
+
+  copyStoreLink() {
+    const storeLink = window.location.origin; // You can change this to actual store link
+    navigator.clipboard.writeText(storeLink).then(() => {
+      // Show feedback
+      const btn = document.getElementById("copy-store-link-btn");
+      if (btn) {
+        const originalText = btn.querySelector("span").textContent;
+        btn.querySelector("span").textContent = "تم النسخ!";
+        setTimeout(() => {
+          btn.querySelector("span").textContent = originalText;
+        }, 2000);
+      }
+    }).catch(() => {
+      // Fallback if clipboard API fails
+      const btn = document.getElementById("copy-store-link-btn");
+      if (btn) {
+        const originalText = btn.querySelector("span").textContent;
+        btn.querySelector("span").textContent = "فشل النسخ";
+        setTimeout(() => {
+          btn.querySelector("span").textContent = originalText;
+        }, 2000);
+      }
+    });
+  },
+};
+
+// Initialize Search Manager on DOM ready
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", () => {
+    helpCenterManager.init();
+    searchManager.init();
+    notificationsManager.init();
+    accountManager.init();
+  });
+} else {
+  helpCenterManager.init();
+  searchManager.init();
+  notificationsManager.init();
+  accountManager.init();
 }

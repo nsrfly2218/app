@@ -25,6 +25,36 @@
         },
       };
     </script>
+    <style>
+      /* Custom scrollbar styles for all scrollable elements */
+      *::-webkit-scrollbar {
+        width: 6px;
+      }
+      *::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      *::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 3px;
+      }
+      *::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+      }
+      .dark *::-webkit-scrollbar-thumb {
+        background: #475569;
+      }
+      .dark *::-webkit-scrollbar-thumb:hover {
+        background: #64748b;
+      }
+      /* Firefox */
+      * {
+        scrollbar-width: thin;
+        scrollbar-color: #cbd5e1 transparent;
+      }
+      .dark * {
+        scrollbar-color: #475569 transparent;
+      }
+    </style>
   </head>
   <body
     class="h-full bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 transition-colors duration-300"
@@ -307,25 +337,133 @@
             </div>
           </button>
 
-          <button
-            id="apps"
-            class="w-10 h-10 flex items-center justify-center rounded-lg cursor-pointer transition-colors duration-150 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100 relative overflow-visible"
-          >
-            <i
-              class="hgi-stroke hgi-dashboard-square-01 text-[24px]"
-              style="color: #003e5c"
-            ></i>
-            <div
-              class="tooltip absolute top-[calc(100%+8px)] left-1/2 -translate-x-1/2 bg-slate-900 dark:bg-slate-700 text-white dark:text-slate-100 px-2 py-1 rounded-md text-xs whitespace-nowrap opacity-0 pointer-events-none transition-opacity duration-150 z-[100] shadow-lg tooltip-element"
-              data-text-ar="التطبيقات"
-              data-text-en="Apps"
+          <div class="relative group">
+            <button
+              id="apps"
+              class="w-10 h-10 flex items-center justify-center rounded-lg cursor-pointer transition-colors duration-150 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100 relative overflow-visible"
             >
-              <span class="tooltip-text">التطبيقات</span>
+              <i
+                class="hgi-stroke hgi-dashboard-square-01 text-[24px]"
+                style="color: #003e5c"
+              ></i>
               <div
-                class="absolute bottom-full left-1/2 -translate-x-1/2 border-[4px] border-transparent border-b-slate-900 dark:border-b-slate-700"
-              ></div>
+                class="tooltip absolute top-[calc(100%+8px)] left-1/2 -translate-x-1/2 bg-slate-900 dark:bg-slate-700 text-white dark:text-slate-100 px-2 py-1 rounded-md text-xs whitespace-nowrap opacity-0 pointer-events-none transition-opacity duration-150 z-[100] shadow-lg tooltip-element"
+                data-text-ar="التطبيقات"
+                data-text-en="Apps"
+              >
+                <span class="tooltip-text">التطبيقات</span>
+                <div
+                  class="absolute bottom-full left-1/2 -translate-x-1/2 border-[4px] border-transparent border-b-slate-900 dark:border-b-slate-700"
+                ></div>
+              </div>
+            </button>
+            <div
+              id="apps-menu"
+              class="absolute top-full mt-2 w-80 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 opacity-0 invisible transform translate-y-[-10px] transition-all duration-200 z-50 apps-menu"
+            >
+              <div class="p-2 grid grid-cols-2 gap-1.5">
+                <a
+                  href="chats.html"
+                  class="app-item flex items-center gap-2 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors duration-150"
+                  data-text-ar="المحادثات"
+                  data-text-en="Chats"
+                >
+                  <div class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-700 transition-colors duration-150 flex-shrink-0">
+                    <i class="hgi-stroke hgi-bubble-chat text-[20px]" style="color: #0090D6"></i>
+                  </div>
+                  <span class="text-sm font-medium text-slate-900 dark:text-slate-100" data-text-ar="المحادثات" data-text-en="Chats">المحادثات</span>
+                </a>
+                <a
+                  href="flows.html"
+                  class="app-item flex items-center gap-2 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors duration-150"
+                  data-text-ar="التدفقات"
+                  data-text-en="Flows"
+                >
+                  <div class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-700 transition-colors duration-150 flex-shrink-0">
+                    <i class="hgi-stroke hgi-workflow-square-06 text-[20px]" style="color: #0090D6"></i>
+                  </div>
+                  <span class="text-sm font-medium text-slate-900 dark:text-slate-100" data-text-ar="التدفقات" data-text-en="Flows">التدفقات</span>
+                </a>
+                <a
+                  href="ai.html"
+                  class="app-item flex items-center gap-2 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors duration-150"
+                  data-text-ar="الذكاء الاصطناعي"
+                  data-text-en="AI"
+                >
+                  <div class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-700 transition-colors duration-150 flex-shrink-0">
+                    <i class="hgi-stroke hgi-ai-brain-03 text-[20px]" style="color: #0090D6"></i>
+                  </div>
+                  <span class="text-sm font-medium text-slate-900 dark:text-slate-100" data-text-ar="الذكاء الاصطناعي" data-text-en="AI">الذكاء الاصطناعي</span>
+                </a>
+                <a
+                  href="orders.html"
+                  class="app-item flex items-center gap-2 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors duration-150"
+                  data-text-ar="الطلبات"
+                  data-text-en="Orders"
+                >
+                  <div class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-700 transition-colors duration-150 flex-shrink-0">
+                    <i class="hgi-stroke hgi-package-01 text-[20px]" style="color: #0090D6"></i>
+                  </div>
+                  <span class="text-sm font-medium text-slate-900 dark:text-slate-100" data-text-ar="الطلبات" data-text-en="Orders">الطلبات</span>
+                </a>
+                <a
+                  href="customers.html"
+                  class="app-item flex items-center gap-2 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors duration-150"
+                  data-text-ar="العملاء"
+                  data-text-en="Customers"
+                >
+                  <div class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-700 transition-colors duration-150 flex-shrink-0">
+                    <i class="hgi-stroke hgi-user-03 text-[20px]" style="color: #0090D6"></i>
+                  </div>
+                  <span class="text-sm font-medium text-slate-900 dark:text-slate-100" data-text-ar="العملاء" data-text-en="Customers">العملاء</span>
+                </a>
+                <a
+                  href="products.html"
+                  class="app-item flex items-center gap-2 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors duration-150"
+                  data-text-ar="المنتجات"
+                  data-text-en="Products"
+                >
+                  <div class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-700 transition-colors duration-150 flex-shrink-0">
+                    <i class="hgi-stroke hgi-shirt-01 text-[20px]" style="color: #0090D6"></i>
+                  </div>
+                  <span class="text-sm font-medium text-slate-900 dark:text-slate-100" data-text-ar="المنتجات" data-text-en="Products">المنتجات</span>
+                </a>
+                <a
+                  href="stores.html"
+                  class="app-item flex items-center gap-2 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors duration-150"
+                  data-text-ar="المتاجر"
+                  data-text-en="Stores"
+                >
+                  <div class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-700 transition-colors duration-150 flex-shrink-0">
+                    <i class="hgi-stroke hgi-store-03 text-[20px]" style="color: #0090D6"></i>
+                  </div>
+                  <span class="text-sm font-medium text-slate-900 dark:text-slate-100" data-text-ar="المتاجر" data-text-en="Stores">المتاجر</span>
+                </a>
+                <a
+                  href="library.html"
+                  class="app-item flex items-center gap-2 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors duration-150"
+                  data-text-ar="المكتبة"
+                  data-text-en="Library"
+                >
+                  <div class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-700 transition-colors duration-150 flex-shrink-0">
+                    <i class="hgi-stroke hgi-folder-library text-[20px]" style="color: #0090D6"></i>
+                  </div>
+                  <span class="text-sm font-medium text-slate-900 dark:text-slate-100" data-text-ar="المكتبة" data-text-en="Library">المكتبة</span>
+                </a>
+                <a
+                  href="settings.html"
+                  class="app-item flex items-center gap-2 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors duration-150"
+                  data-text-ar="الإعدادات"
+                  data-text-en="Settings"
+                >
+                  <div class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-700 transition-colors duration-150 flex-shrink-0">
+                    <i class="hgi-stroke hgi-settings-02 text-[20px]" style="color: #0090D6"></i>
+                  </div>
+                  <span class="text-sm font-medium text-slate-900 dark:text-slate-100" data-text-ar="الإعدادات" data-text-en="Settings">الإعدادات</span>
+                </a>
+              </div>
             </div>
-          </button>
+          </div>
 
           <button
             id="help-center"
@@ -454,6 +592,259 @@
             </div>
           </button>
 
+          <!-- Notifications Dropdown -->
+          <div
+            id="notifications-dropdown"
+            class="absolute top-full mt-2 w-[400px] max-h-[600px] bg-white dark:bg-slate-800 rounded-lg shadow-2xl border border-slate-200 dark:border-slate-700 opacity-0 invisible transform translate-y-[-10px] transition-all duration-200 z-50 flex flex-col overflow-hidden"
+          >
+            <!-- Tabs Header -->
+            <div class="flex items-center border-b border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 flex-shrink-0 overflow-x-auto">
+              <button
+                class="notifications-tab-btn px-4 py-3 text-xs font-medium text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400 transition-colors duration-150 whitespace-nowrap flex-shrink-0"
+                data-tab="actions"
+                data-text-ar="الإجراءات"
+                data-text-en="Actions"
+              >
+                الإجراءات
+              </button>
+              <button
+                class="notifications-tab-btn px-4 py-3 text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors duration-150 whitespace-nowrap flex-shrink-0"
+                data-tab="updates"
+                data-text-ar="التحديثات"
+                data-text-en="Updates"
+              >
+                التحديثات
+              </button>
+              <button
+                class="notifications-tab-btn px-4 py-3 text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors duration-150 whitespace-nowrap flex-shrink-0"
+                data-tab="customers"
+                data-text-ar="أنشطة العملاء"
+                data-text-en="Customer Activities"
+              >
+                أنشطة العملاء
+              </button>
+              <button
+                class="notifications-tab-btn px-4 py-3 text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors duration-150 whitespace-nowrap flex-shrink-0"
+                data-tab="partners"
+                data-text-ar="الشركاء"
+                data-text-en="Partners"
+              >
+                الشركاء
+              </button>
+              <button
+                class="notifications-tab-btn px-4 py-3 text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors duration-150 whitespace-nowrap flex-shrink-0"
+                data-tab="chats"
+                data-text-ar="المحادثات"
+                data-text-en="Chats"
+              >
+                المحادثات
+              </button>
+            </div>
+
+            <!-- Notifications Content -->
+            <div class="flex-1 overflow-y-auto max-h-[500px]">
+              <!-- Actions Tab -->
+              <div id="notifications-tab-actions" class="notifications-tab-content p-3 space-y-2">
+                <div class="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+                  <div class="flex items-start gap-3">
+                    <div class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <i class="hgi-stroke hgi-check-01 text-blue-600 dark:text-blue-400 text-sm"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <div class="text-sm font-medium text-slate-900 dark:text-slate-100 mb-1" data-text-ar="تم إنشاء طلب جديد" data-text-en="New order created">تم إنشاء طلب جديد</div>
+                      <p class="text-xs text-slate-600 dark:text-slate-400" data-text-ar="تم إنشاء طلب #12345 بنجاح" data-text-en="Order #12345 has been created successfully">تم إنشاء طلب #12345 بنجاح</p>
+                      <span class="text-[10px] text-slate-400 dark:text-slate-500 mt-1 block" data-text-ar="منذ 5 دقائق" data-text-en="5 minutes ago">منذ 5 دقائق</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
+                  <div class="flex items-start gap-3">
+                    <div class="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/40 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <i class="hgi-stroke hgi-check-circle text-green-600 dark:text-green-400 text-sm"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <div class="text-sm font-medium text-slate-900 dark:text-slate-100 mb-1" data-text-ar="تم تحديث المنتج" data-text-en="Product updated">تم تحديث المنتج</div>
+                      <p class="text-xs text-slate-600 dark:text-slate-400" data-text-ar="تم تحديث معلومات المنتج بنجاح" data-text-en="Product information has been updated successfully">تم تحديث معلومات المنتج بنجاح</p>
+                      <span class="text-[10px] text-slate-400 dark:text-slate-500 mt-1 block" data-text-ar="منذ 15 دقيقة" data-text-en="15 minutes ago">منذ 15 دقيقة</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="p-3 rounded-lg bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800">
+                  <div class="flex items-start gap-3">
+                    <div class="w-8 h-8 rounded-full bg-orange-100 dark:bg-orange-900/40 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <i class="hgi-stroke hgi-alert-circle text-orange-600 dark:text-orange-400 text-sm"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <div class="text-sm font-medium text-slate-900 dark:text-slate-100 mb-1" data-text-ar="يتطلب إجراء عاجل" data-text-en="Urgent action required">يتطلب إجراء عاجل</div>
+                      <p class="text-xs text-slate-600 dark:text-slate-400" data-text-ar="يوجد طلب يحتاج إلى مراجعة عاجلة" data-text-en="There is an order that needs urgent review">يوجد طلب يحتاج إلى مراجعة عاجلة</p>
+                      <span class="text-[10px] text-slate-400 dark:text-slate-500 mt-1 block" data-text-ar="منذ ساعة" data-text-en="1 hour ago">منذ ساعة</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Updates Tab -->
+              <div id="notifications-tab-updates" class="notifications-tab-content hidden p-3 space-y-2">
+                <div class="p-3 rounded-lg bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800">
+                  <div class="flex items-start gap-3">
+                    <div class="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <i class="hgi-stroke hgi-bell text-purple-600 dark:text-purple-400 text-sm"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <div class="text-sm font-medium text-slate-900 dark:text-slate-100 mb-1" data-text-ar="تحديث النظام متاح" data-text-en="System update available">تحديث النظام متاح</div>
+                      <p class="text-xs text-slate-600 dark:text-slate-400" data-text-ar="يتوفر تحديث جديد للنظام مع ميزات محسّنة" data-text-en="A new system update is available with enhanced features">يتوفر تحديث جديد للنظام مع ميزات محسّنة</p>
+                      <span class="text-[10px] text-slate-400 dark:text-slate-500 mt-1 block" data-text-ar="منذ ساعتين" data-text-en="2 hours ago">منذ ساعتين</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="p-3 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800">
+                  <div class="flex items-start gap-3">
+                    <div class="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <i class="hgi-stroke hgi-information-circle text-indigo-600 dark:text-indigo-400 text-sm"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <div class="text-sm font-medium text-slate-900 dark:text-slate-100 mb-1" data-text-ar="تحديث الأمان" data-text-en="Security update">تحديث الأمان</div>
+                      <p class="text-xs text-slate-600 dark:text-slate-400" data-text-ar="تم تحسين إعدادات الأمان والحماية" data-text-en="Security and protection settings have been improved">تم تحسين إعدادات الأمان والحماية</p>
+                      <span class="text-[10px] text-slate-400 dark:text-slate-500 mt-1 block" data-text-ar="منذ 3 ساعات" data-text-en="3 hours ago">منذ 3 ساعات</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="p-3 rounded-lg bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-800">
+                  <div class="flex items-start gap-3">
+                    <div class="w-8 h-8 rounded-full bg-teal-100 dark:bg-teal-900/40 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <i class="hgi-stroke hgi-lightbulb-01 text-teal-600 dark:text-teal-400 text-sm"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <div class="text-sm font-medium text-slate-900 dark:text-slate-100 mb-1" data-text-ar="ميزة جديدة متاحة" data-text-en="New feature available">ميزة جديدة متاحة</div>
+                      <p class="text-xs text-slate-600 dark:text-slate-400" data-text-ar="تم إضافة ميزة تحليل البيانات المتقدمة" data-text-en="Advanced data analysis feature has been added">تم إضافة ميزة تحليل البيانات المتقدمة</p>
+                      <span class="text-[10px] text-slate-400 dark:text-slate-500 mt-1 block" data-text-ar="منذ 5 ساعات" data-text-en="5 hours ago">منذ 5 ساعات</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Customer Activities Tab -->
+              <div id="notifications-tab-customers" class="notifications-tab-content hidden p-3 space-y-2">
+                <div class="p-3 rounded-lg bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-800">
+                  <div class="flex items-start gap-3">
+                    <div class="w-8 h-8 rounded-full bg-cyan-100 dark:bg-cyan-900/40 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <i class="hgi-stroke hgi-user-plus text-cyan-600 dark:text-cyan-400 text-sm"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <div class="text-sm font-medium text-slate-900 dark:text-slate-100 mb-1" data-text-ar="عميل جديد" data-text-en="New customer">عميل جديد</div>
+                      <p class="text-xs text-slate-600 dark:text-slate-400" data-text-ar="قام أحمد محمد بالتسجيل في النظام" data-text-en="Ahmed Mohamed has registered in the system">قام أحمد محمد بالتسجيل في النظام</p>
+                      <span class="text-[10px] text-slate-400 dark:text-slate-500 mt-1 block" data-text-ar="منذ 10 دقائق" data-text-en="10 minutes ago">منذ 10 دقائق</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="p-3 rounded-lg bg-pink-50 dark:bg-pink-900/20 border border-pink-200 dark:border-pink-800">
+                  <div class="flex items-start gap-3">
+                    <div class="w-8 h-8 rounded-full bg-pink-100 dark:bg-pink-900/40 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <i class="hgi-stroke hgi-shopping-cart text-pink-600 dark:text-pink-400 text-sm"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <div class="text-sm font-medium text-slate-900 dark:text-slate-100 mb-1" data-text-ar="شراء جديد" data-text-en="New purchase">شراء جديد</div>
+                      <p class="text-xs text-slate-600 dark:text-slate-400" data-text-ar="قامت سارة علي بإتمام عملية شراء" data-text-en="Sara Ali has completed a purchase">قامت سارة علي بإتمام عملية شراء</p>
+                      <span class="text-[10px] text-slate-400 dark:text-slate-500 mt-1 block" data-text-ar="منذ 30 دقيقة" data-text-en="30 minutes ago">منذ 30 دقيقة</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+                  <div class="flex items-start gap-3">
+                    <div class="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <i class="hgi-stroke hgi-star text-amber-600 dark:text-amber-400 text-sm"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <div class="text-sm font-medium text-slate-900 dark:text-slate-100 mb-1" data-text-ar="تقييم جديد" data-text-en="New rating">تقييم جديد</div>
+                      <p class="text-xs text-slate-600 dark:text-slate-400" data-text-ar="قام خالد إبراهيم بتقييم المنتج بخمس نجوم" data-text-en="Khalid Ibrahim rated the product 5 stars">قام خالد إبراهيم بتقييم المنتج بخمس نجوم</p>
+                      <span class="text-[10px] text-slate-400 dark:text-slate-500 mt-1 block" data-text-ar="منذ ساعة" data-text-en="1 hour ago">منذ ساعة</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Partners Tab -->
+              <div id="notifications-tab-partners" class="notifications-tab-content hidden p-3 space-y-2">
+                <div class="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800">
+                  <div class="flex items-start gap-3">
+                    <div class="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <i class="hgi-stroke hgi-handshake text-emerald-600 dark:text-emerald-400 text-sm"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <div class="text-sm font-medium text-slate-900 dark:text-slate-100 mb-1" data-text-ar="طلب شراكة جديد" data-text-en="New partnership request">طلب شراكة جديد</div>
+                      <p class="text-xs text-slate-600 dark:text-slate-400" data-text-ar="استقبلت طلب شراكة جديد من شركة التقنية الحديثة" data-text-en="Received a new partnership request from Modern Technology Company">استقبلت طلب شراكة جديد من شركة التقنية الحديثة</p>
+                      <span class="text-[10px] text-slate-400 dark:text-slate-500 mt-1 block" data-text-ar="منذ 20 دقيقة" data-text-en="20 minutes ago">منذ 20 دقيقة</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="p-3 rounded-lg bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800">
+                  <div class="flex items-start gap-3">
+                    <div class="w-8 h-8 rounded-full bg-violet-100 dark:bg-violet-900/40 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <i class="hgi-stroke hgi-check-circle text-violet-600 dark:text-violet-400 text-sm"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <div class="text-sm font-medium text-slate-900 dark:text-slate-100 mb-1" data-text-ar="تم الموافقة على الشراكة" data-text-en="Partnership approved">تم الموافقة على الشراكة</div>
+                      <p class="text-xs text-slate-600 dark:text-slate-400" data-text-ar="تم الموافقة على شراكة مع شركة التجارة الإلكترونية" data-text-en="Partnership with E-Commerce Company has been approved">تم الموافقة على شراكة مع شركة التجارة الإلكترونية</p>
+                      <span class="text-[10px] text-slate-400 dark:text-slate-500 mt-1 block" data-text-ar="منذ ساعتين" data-text-en="2 hours ago">منذ ساعتين</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="p-3 rounded-lg bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800">
+                  <div class="flex items-start gap-3">
+                    <div class="w-8 h-8 rounded-full bg-rose-100 dark:bg-rose-900/40 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <i class="hgi-stroke hgi-file-01 text-rose-600 dark:text-rose-400 text-sm"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <div class="text-sm font-medium text-slate-900 dark:text-slate-100 mb-1" data-text-ar="مستند شراكة جديد" data-text-en="New partnership document">مستند شراكة جديد</div>
+                      <p class="text-xs text-slate-600 dark:text-slate-400" data-text-ar="تم رفع مستند عقد الشراكة الجديد" data-text-en="New partnership contract document has been uploaded">تم رفع مستند عقد الشراكة الجديد</p>
+                      <span class="text-[10px] text-slate-400 dark:text-slate-500 mt-1 block" data-text-ar="منذ 4 ساعات" data-text-en="4 hours ago">منذ 4 ساعات</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Chats Tab -->
+              <div id="notifications-tab-chats" class="notifications-tab-content hidden p-3 space-y-2">
+                <div class="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+                  <div class="flex items-start gap-3">
+                    <div class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <i class="hgi-stroke hgi-bubble-chat text-blue-600 dark:text-blue-400 text-sm"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <div class="text-sm font-medium text-slate-900 dark:text-slate-100 mb-1" data-text-ar="رسالة جديدة" data-text-en="New message">رسالة جديدة</div>
+                      <p class="text-xs text-slate-600 dark:text-slate-400" data-text-ar="رسالة جديدة من محمد أحمد في محادثة #123" data-text-en="New message from Mohamed Ahmed in chat #123">رسالة جديدة من محمد أحمد في محادثة #123</p>
+                      <span class="text-[10px] text-slate-400 dark:text-slate-500 mt-1 block" data-text-ar="منذ دقيقتين" data-text-en="2 minutes ago">منذ دقيقتين</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
+                  <div class="flex items-start gap-3">
+                    <div class="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/40 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <i class="hgi-stroke hgi-check-01 text-green-600 dark:text-green-400 text-sm"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <div class="text-sm font-medium text-slate-900 dark:text-slate-100 mb-1" data-text-ar="تم حل المحادثة" data-text-en="Chat resolved">تم حل المحادثة</div>
+                      <p class="text-xs text-slate-600 dark:text-slate-400" data-text-ar="تم حل المحادثة #456 بنجاح" data-text-en="Chat #456 has been resolved successfully">تم حل المحادثة #456 بنجاح</p>
+                      <span class="text-[10px] text-slate-400 dark:text-slate-500 mt-1 block" data-text-ar="منذ 25 دقيقة" data-text-en="25 minutes ago">منذ 25 دقيقة</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="p-3 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800">
+                  <div class="flex items-start gap-3">
+                    <div class="w-8 h-8 rounded-full bg-yellow-100 dark:bg-yellow-900/40 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <i class="hgi-stroke hgi-alert-triangle text-yellow-600 dark:text-yellow-400 text-sm"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <div class="text-sm font-medium text-slate-900 dark:text-slate-100 mb-1" data-text-ar="محادثة عالقة" data-text-en="Pending chat">محادثة عالقة</div>
+                      <p class="text-xs text-slate-600 dark:text-slate-400" data-text-ar="توجد محادثة لم يتم الرد عليها لأكثر من ساعة" data-text-en="There is a chat that hasn't been replied to for more than an hour">توجد محادثة لم يتم الرد عليها لأكثر من ساعة</p>
+                      <span class="text-[10px] text-slate-400 dark:text-slate-500 mt-1 block" data-text-ar="منذ ساعة" data-text-en="1 hour ago">منذ ساعة</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <button
             id="account"
             class="w-10 h-10 flex items-center justify-center rounded-lg cursor-pointer transition-colors duration-150 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100 relative overflow-visible"
@@ -470,9 +861,89 @@
               <span class="tooltip-text">الحساب</span>
               <div
                 class="absolute bottom-full left-1/2 -translate-x-1/2 border-[4px] border-transparent border-b-slate-900 dark:border-b-slate-700"
-              ></div>
+              >              </div>
             </div>
           </button>
+
+          <!-- Account Dropdown -->
+          <div
+            id="account-dropdown"
+            class="absolute top-full mt-2 w-[320px] bg-white dark:bg-slate-800 rounded-lg shadow-2xl border border-slate-200 dark:border-slate-700 opacity-0 invisible transform translate-y-[-10px] transition-all duration-200 z-50 flex flex-col overflow-hidden"
+          >
+            <!-- Store Header -->
+            <div class="p-4 border-b border-slate-200 dark:border-slate-600 flex-shrink-0">
+              <div class="flex items-center gap-3 mb-3">
+                <div class="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center flex-shrink-0">
+                  <i class="hgi-stroke hgi-store-03 text-slate-600 dark:text-slate-400 text-lg"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-sm font-medium text-slate-900 dark:text-slate-100 truncate" data-text-ar="متجر التقنية الحديثة" data-text-en="Modern Tech Store">متجر التقنية الحديثة</div>
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <button class="flex-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors duration-150 flex items-center justify-center gap-1.5" data-text-ar="زيارة المتجر" data-text-en="Visit Store">
+                  <i class="hgi-stroke hgi-external-link text-xs"></i>
+                  <span>زيارة المتجر</span>
+                </button>
+                <button id="copy-store-link-btn" class="flex-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors duration-150 flex items-center justify-center gap-1.5" data-text-ar="نسخ رابط المتجر" data-text-en="Copy Store Link">
+                  <i class="hgi-stroke hgi-copy-01 text-xs"></i>
+                  <span>نسخ الرابط</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Menu Items -->
+            <div class="flex-1 overflow-y-auto max-h-[400px] py-2">
+              <a href="stores.html" class="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors duration-150 text-slate-700 dark:text-slate-300">
+                <i class="hgi-stroke hgi-store-03 text-slate-500 dark:text-slate-400 text-base"></i>
+                <span class="text-sm" data-text-ar="إدارة المتاجر" data-text-en="Manage Stores">إدارة المتاجر</span>
+              </a>
+              <a href="#" class="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors duration-150 text-slate-700 dark:text-slate-300">
+                <i class="hgi-stroke hgi-credit-card text-slate-500 dark:text-slate-400 text-base"></i>
+                <span class="text-sm" data-text-ar="باقة المتجر" data-text-en="Store Plan">باقة المتجر</span>
+              </a>
+              <a href="#" class="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors duration-150 text-slate-700 dark:text-slate-300">
+                <i class="hgi-stroke hgi-notification-01 text-slate-500 dark:text-slate-400 text-base"></i>
+                <span class="text-sm" data-text-ar="تحديثات المنصة" data-text-en="Platform Updates">تحديثات المنصة</span>
+              </a>
+              <a href="#" class="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors duration-150 text-slate-700 dark:text-slate-300">
+                <i class="hgi-stroke hgi-user-group-03 text-slate-500 dark:text-slate-400 text-base"></i>
+                <span class="text-sm" data-text-ar="المجتمع" data-text-en="Community">المجتمع</span>
+              </a>
+              <a href="#" class="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors duration-150 text-slate-700 dark:text-slate-300">
+                <i class="hgi-stroke hgi-idea text-slate-500 dark:text-slate-400 text-base"></i>
+                <span class="text-sm" data-text-ar="المقترحات" data-text-en="Suggestions">المقترحات</span>
+              </a>
+              <a href="#" class="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors duration-150 text-slate-700 dark:text-slate-300">
+                <i class="hgi-stroke hgi-delete-04 text-slate-500 dark:text-slate-400 text-base"></i>
+                <span class="text-sm" data-text-ar="تفريغ الكاش" data-text-en="Clear Cache">تفريغ الكاش</span>
+              </a>
+            </div>
+
+            <!-- Profile Footer -->
+            <div class="border-t border-slate-200 dark:border-slate-600 p-3 bg-slate-50 dark:bg-slate-800/50 flex-shrink-0">
+              <h4 class="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-1.5" data-text-ar="الملف الشخصي" data-text-en="Profile">الملف الشخصي</h4>
+              <div class="flex items-center justify-between">
+                <p class="text-xs text-slate-600 dark:text-slate-400" data-text-ar="البريد الإلكتروني، كلمة المرور، رقم الجوال" data-text-en="Email, Password, Phone Number">البريد الإلكتروني، كلمة المرور، رقم الجوال</p>
+                <div class="flex items-center gap-2">
+                  <button id="profile-edit-btn" class="relative w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors duration-150 text-slate-600 dark:text-slate-400" data-text-ar="تعديل" data-text-en="Edit">
+                    <i class="hgi-stroke hgi-edit-01 text-base"></i>
+                    <div class="tooltip absolute bottom-[calc(100%+8px)] left-1/2 -translate-x-1/2 bg-slate-900 dark:bg-slate-700 text-white dark:text-slate-100 px-2 py-1 rounded-md text-xs whitespace-nowrap opacity-0 pointer-events-none transition-opacity duration-150 z-[100] shadow-lg tooltip-element" data-text-ar="تعديل" data-text-en="Edit">
+                      <span class="tooltip-text">تعديل</span>
+                      <div class="absolute top-full left-1/2 -translate-x-1/2 border-[4px] border-transparent border-t-slate-900 dark:border-t-slate-700"></div>
+                    </div>
+                  </button>
+                  <button id="profile-logout-btn" class="relative w-8 h-8 flex items-center justify-center rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors duration-150 text-red-600 dark:text-red-400" data-text-ar="تسجيل الخروج" data-text-en="Sign Out">
+                    <i class="hgi-stroke hgi-logout-01 text-base"></i>
+                    <div class="tooltip absolute bottom-[calc(100%+8px)] left-1/2 -translate-x-1/2 bg-slate-900 dark:bg-slate-700 text-white dark:text-slate-100 px-2 py-1 rounded-md text-xs whitespace-nowrap opacity-0 pointer-events-none transition-opacity duration-150 z-[100] shadow-lg tooltip-element" data-text-ar="تسجيل الخروج" data-text-en="Sign Out">
+                      <span class="tooltip-text">تسجيل الخروج</span>
+                      <div class="absolute top-full left-1/2 -translate-x-1/2 border-[4px] border-transparent border-t-slate-900 dark:border-t-slate-700"></div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </header>
 
@@ -516,6 +987,273 @@
           </h1>
         </div>
       </main>
+    </div>
+
+    <!-- Help Center Modal -->
+    <div
+      id="help-center-modal"
+      class="fixed w-[400px] h-[550px] bg-white dark:bg-slate-800 rounded-lg shadow-2xl border border-slate-200 dark:border-slate-700 opacity-0 invisible transform translate-y-[-10px] transition-all duration-200 z-[200] flex flex-col overflow-hidden"
+      style="top: 70px; right: 20px;"
+    >
+      <!-- Draggable Header -->
+      <div
+        id="help-center-modal-header"
+        class="flex items-center justify-between px-4 py-3 bg-slate-50 dark:bg-slate-700 border-b border-slate-200 dark:border-slate-600 cursor-move flex-shrink-0"
+      >
+        <h3
+          class="text-lg font-semibold text-slate-900 dark:text-slate-100"
+          data-text-ar="مركز المساعدة"
+          data-text-en="Help Center"
+        >
+          مركز المساعدة
+        </h3>
+        <button
+          id="help-center-modal-close"
+          class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors duration-150 text-slate-500 dark:text-slate-400"
+        >
+          <i class="hgi-stroke hgi-cancel-01 text-[20px]"></i>
+        </button>
+      </div>
+
+      <!-- Search Box -->
+      <div class="px-4 py-3 border-b border-slate-200 dark:border-slate-600 flex-shrink-0">
+        <div class="relative">
+          <i
+            class="hgi-stroke hgi-search-01 absolute top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500"
+            style="right: 12px; color: #003e5c"
+          ></i>
+          <input
+            type="text"
+            id="help-search-input"
+            class="w-full pl-3 pr-10 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="ابحث في المساعدة..."
+            data-placeholder-ar="ابحث في المساعدة..."
+            data-placeholder-en="Search help..."
+          />
+        </div>
+      </div>
+
+      <!-- Content Area -->
+      <div
+        id="help-center-content"
+        class="flex-1 overflow-y-auto p-4"
+      >
+        <!-- Getting Started Tab Content -->
+        <div id="help-tab-getting-started" class="help-tab-content space-y-4">
+          <div class="space-y-3">
+            <h4 class="text-base font-semibold text-slate-900 dark:text-slate-100" data-text-ar="ابدأ بسرعة" data-text-en="Quick Start">ابدأ بسرعة</h4>
+            <div class="space-y-2">
+              <a href="#" class="block p-3 rounded-lg bg-slate-50 dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors duration-150">
+                <div class="font-medium text-sm text-slate-900 dark:text-slate-100" data-text-ar="كيفية إنشاء محادثة جديدة" data-text-en="How to create a new chat">كيفية إنشاء محادثة جديدة</div>
+                <div class="text-xs text-slate-500 dark:text-slate-400 mt-1" data-text-ar="تعلم أساسيات إنشاء وإدارة المحادثات" data-text-en="Learn the basics of creating and managing chats">تعلم أساسيات إنشاء وإدارة المحادثات</div>
+              </a>
+              <a href="#" class="block p-3 rounded-lg bg-slate-50 dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors duration-150">
+                <div class="font-medium text-sm text-slate-900 dark:text-slate-100" data-text-ar="إعداد التدفقات التلقائية" data-text-en="Setting up automated flows">إعداد التدفقات التلقائية</div>
+                <div class="text-xs text-slate-500 dark:text-slate-400 mt-1" data-text-ar="ابدأ في إنشاء تدفقات العمل التلقائية" data-text-en="Start creating automated workflows">ابدأ في إنشاء تدفقات العمل التلقائية</div>
+              </a>
+              <a href="#" class="block p-3 rounded-lg bg-slate-50 dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors duration-150">
+                <div class="font-medium text-sm text-slate-900 dark:text-slate-100" data-text-ar="استخدام الذكاء الاصطناعي" data-text-en="Using AI features">استخدام الذكاء الاصطناعي</div>
+                <div class="text-xs text-slate-500 dark:text-slate-400 mt-1" data-text-ar="استكشف ميزات الذكاء الاصطناعي المتاحة" data-text-en="Explore available AI features">استكشف ميزات الذكاء الاصطناعي المتاحة</div>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Articles Tab Content -->
+        <div id="help-tab-articles" class="help-tab-content hidden space-y-4">
+          <div class="space-y-3">
+            <h4 class="text-base font-semibold text-slate-900 dark:text-slate-100" data-text-ar="المقالات" data-text-en="Articles">المقالات</h4>
+            <div class="space-y-2">
+              <a href="#" class="block p-3 rounded-lg bg-slate-50 dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors duration-150">
+                <div class="font-medium text-sm text-slate-900 dark:text-slate-100" data-text-ar="إدارة العملاء بشكل فعال" data-text-en="Managing customers effectively">إدارة العملاء بشكل فعال</div>
+                <div class="text-xs text-slate-500 dark:text-slate-400 mt-1" data-text-ar="نصائح وأفضل الممارسات لإدارة قائمة عملائك" data-text-en="Tips and best practices for managing your customer list">نصائح وأفضل الممارسات لإدارة قائمة عملائك</div>
+              </a>
+              <a href="#" class="block p-3 rounded-lg bg-slate-50 dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors duration-150">
+                <div class="font-medium text-sm text-slate-900 dark:text-slate-100" data-text-ar="تنظيم المنتجات والمخزون" data-text-en="Organizing products and inventory">تنظيم المنتجات والمخزون</div>
+                <div class="text-xs text-slate-500 dark:text-slate-400 mt-1" data-text-ar="دليل شامل لإدارة منتجاتك ومخزونك" data-text-en="Complete guide to managing your products and inventory">دليل شامل لإدارة منتجاتك ومخزونك</div>
+              </a>
+              <a href="#" class="block p-3 rounded-lg bg-slate-50 dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors duration-150">
+                <div class="font-medium text-sm text-slate-900 dark:text-slate-100" data-text-ar="معالجة الطلبات بسرعة" data-text-en="Processing orders quickly">معالجة الطلبات بسرعة</div>
+                <div class="text-xs text-slate-500 dark:text-slate-400 mt-1" data-text-ar="تعلم كيفية معالجة وإدارة الطلبات بكفاءة" data-text-en="Learn how to process and manage orders efficiently">تعلم كيفية معالجة وإدارة الطلبات بكفاءة</div>
+              </a>
+              <a href="#" class="block p-3 rounded-lg bg-slate-50 dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors duration-150">
+                <div class="font-medium text-sm text-slate-900 dark:text-slate-100" data-text-ar="استخدام المكتبة والموارد" data-text-en="Using the library and resources">استخدام المكتبة والموارد</div>
+                <div class="text-xs text-slate-500 dark:text-slate-400 mt-1" data-text-ar="استكشف الموارد والمكتبات المتاحة لك" data-text-en="Explore available resources and libraries">استكشف الموارد والمكتبات المتاحة لك</div>
+              </a>
+              <a href="#" class="block p-3 rounded-lg bg-slate-50 dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors duration-150">
+                <div class="font-medium text-sm text-slate-900 dark:text-slate-100" data-text-ar="تخصيص الإعدادات" data-text-en="Customizing settings">تخصيص الإعدادات</div>
+                <div class="text-xs text-slate-500 dark:text-slate-400 mt-1" data-text-ar="كيفية تخصيص إعدادات النظام حسب احتياجاتك" data-text-en="How to customize system settings to your needs">كيفية تخصيص إعدادات النظام حسب احتياجاتك</div>
+              </a>
+              <a href="#" class="block p-3 rounded-lg bg-slate-50 dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors duration-150">
+                <div class="font-medium text-sm text-slate-900 dark:text-slate-100" data-text-ar="إدارة المتاجر المتعددة" data-text-en="Managing multiple stores">إدارة المتاجر المتعددة</div>
+                <div class="text-xs text-slate-500 dark:text-slate-400 mt-1" data-text-ar="تعلم كيفية إدارة عدة متاجر من مكان واحد" data-text-en="Learn how to manage multiple stores from one place">تعلم كيفية إدارة عدة متاجر من مكان واحد</div>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Helper Tools Tab Content -->
+        <div id="help-tab-tools" class="help-tab-content hidden space-y-4">
+          <div class="space-y-3">
+            <h4 class="text-base font-semibold text-slate-900 dark:text-slate-100" data-text-ar="أدوات مساعدة" data-text-en="Helper Tools">أدوات مساعدة</h4>
+            <div class="space-y-2">
+              <a href="#" class="flex items-center gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors duration-150">
+                <i class="hgi-stroke hgi-book-01 text-[20px] text-blue-600 dark:text-blue-400"></i>
+                <div>
+                  <div class="font-medium text-sm text-slate-900 dark:text-slate-100" data-text-ar="دليل المستخدم" data-text-en="User Guide">دليل المستخدم</div>
+                  <div class="text-xs text-slate-500 dark:text-slate-400 mt-1" data-text-ar="دليل شامل لجميع الميزات" data-text-en="Complete guide to all features">دليل شامل لجميع الميزات</div>
+                </div>
+              </a>
+              <a href="#" class="flex items-center gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors duration-150">
+                <i class="hgi-stroke hgi-video-01 text-[20px] text-blue-600 dark:text-blue-400"></i>
+                <div>
+                  <div class="font-medium text-sm text-slate-900 dark:text-slate-100" data-text-ar="فيديو تعليمي" data-text-en="Video Tutorial">فيديو تعليمي</div>
+                  <div class="text-xs text-slate-500 dark:text-slate-400 mt-1" data-text-ar="مقاطع فيديو تعليمية خطوة بخطوة" data-text-en="Step-by-step video tutorials">مقاطع فيديو تعليمية خطوة بخطوة</div>
+                </div>
+              </a>
+              <a href="#" class="flex items-center gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors duration-150">
+                <i class="hgi-stroke hgi-message-question text-[20px] text-blue-600 dark:text-blue-400"></i>
+                <div>
+                  <div class="font-medium text-sm text-slate-900 dark:text-slate-100" data-text-ar="الأسئلة الشائعة" data-text-en="FAQ">الأسئلة الشائعة</div>
+                  <div class="text-xs text-slate-500 dark:text-slate-400 mt-1" data-text-ar="إجابات على الأسئلة الأكثر شيوعاً" data-text-en="Answers to the most common questions">إجابات على الأسئلة الأكثر شيوعاً</div>
+                </div>
+              </a>
+              <a href="#" class="flex items-center gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors duration-150">
+                <i class="hgi-stroke hgi-headset text-[20px] text-blue-600 dark:text-blue-400"></i>
+                <div>
+                  <div class="font-medium text-sm text-slate-900 dark:text-slate-100" data-text-ar="اتصل بالدعم" data-text-en="Contact Support">اتصل بالدعم</div>
+                  <div class="text-xs text-slate-500 dark:text-slate-400 mt-1" data-text-ar="تواصل مع فريق الدعم للحصول على المساعدة" data-text-en="Contact support team for assistance">تواصل مع فريق الدعم للحصول على المساعدة</div>
+                </div>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabs Footer -->
+      <div
+        class="flex items-center border-t border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 flex-shrink-0"
+      >
+        <button
+          id="help-tab-btn-getting-started"
+          class="help-tab-btn flex-1 px-4 py-3 text-sm font-medium text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400 transition-colors duration-150"
+          data-tab="getting-started"
+          data-text-ar="البداية"
+          data-text-en="Getting Started"
+        >
+          البداية
+        </button>
+        <button
+          id="help-tab-btn-articles"
+          class="help-tab-btn flex-1 px-4 py-3 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors duration-150"
+          data-tab="articles"
+          data-text-ar="المقالات"
+          data-text-en="Articles"
+        >
+          المقالات
+        </button>
+        <button
+          id="help-tab-btn-tools"
+          class="help-tab-btn flex-1 px-4 py-3 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors duration-150"
+          data-tab="tools"
+          data-text-ar="أدوات مساعدة"
+          data-text-en="Helper Tools"
+        >
+          أدوات مساعدة
+        </button>
+      </div>
+    </div>
+
+    <!-- Search Modal -->
+    <div
+      id="search-modal"
+      class="fixed inset-0 bg-black/50 dark:bg-black/70 z-[300] opacity-0 invisible transition-opacity duration-200 flex items-center justify-center"
+    >
+      <div
+        class="w-[700px] max-h-[80vh] bg-white dark:bg-slate-800 rounded-lg shadow-2xl border border-slate-200 dark:border-slate-700 transform scale-95 transition-transform duration-200 flex flex-col overflow-hidden"
+      >
+        <!-- Search Input -->
+        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-600 flex-shrink-0">
+          <div class="relative">
+            <i
+              class="hgi-stroke hgi-search-01 absolute top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500"
+              style="right: 16px; color: #003e5c"
+            ></i>
+            <input
+              type="text"
+              id="search-modal-input"
+              class="w-full pl-4 pr-12 py-3 text-base border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="ابحث عن أي شيء..."
+              data-placeholder-ar="ابحث عن أي شيء..."
+              data-placeholder-en="Search for anything..."
+              autocomplete="off"
+            />
+          </div>
+        </div>
+
+        <!-- Search Results Container -->
+        <div
+          id="search-results-container"
+          class="flex-1 overflow-y-auto px-6 py-4 min-h-[300px] max-h-[500px]"
+        >
+          <!-- Search History (when input is empty) -->
+          <div id="search-history" class="space-y-3">
+            <h3
+              class="text-sm font-semibold text-slate-500 dark:text-slate-400 mb-3"
+              data-text-ar="آخر عمليات البحث"
+              data-text-en="Recent Searches"
+            >
+              آخر عمليات البحث
+            </h3>
+            <div id="search-history-list" class="space-y-2">
+              <!-- History items will be added here -->
+            </div>
+          </div>
+
+          <!-- Search Results -->
+          <div id="search-results" class="hidden space-y-2">
+            <!-- Results will be added here -->
+          </div>
+
+          <!-- No Results -->
+          <div
+            id="search-no-results"
+            class="hidden flex flex-col items-center justify-center py-12 text-center"
+          >
+            <i
+              class="hgi-stroke hgi-search-01 text-[48px] text-slate-300 dark:text-slate-600 mb-4"
+            ></i>
+            <p
+              class="text-slate-500 dark:text-slate-400"
+              data-text-ar="لا توجد نتائج"
+              data-text-en="No results found"
+            >
+              لا توجد نتائج
+            </p>
+          </div>
+        </div>
+
+        <!-- Keyboard Shortcuts Bar -->
+        <div
+          class="px-6 py-3 bg-slate-50 dark:bg-slate-700 border-t border-slate-200 dark:border-slate-600 flex items-center justify-between flex-shrink-0"
+        >
+          <div class="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
+            <div class="flex items-center gap-1.5">
+              <kbd class="px-2 py-1 bg-white dark:bg-slate-600 border border-slate-300 dark:border-slate-500 rounded text-[10px] font-mono">↑</kbd>
+              <kbd class="px-2 py-1 bg-white dark:bg-slate-600 border border-slate-300 dark:border-slate-500 rounded text-[10px] font-mono">↓</kbd>
+              <span data-text-ar="للتنقل" data-text-en="Navigate">للتنقل</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <kbd class="px-2 py-1 bg-white dark:bg-slate-600 border border-slate-300 dark:border-slate-500 rounded text-[10px] font-mono">Enter</kbd>
+              <span data-text-ar="للاختيار" data-text-en="Select">للاختيار</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <kbd class="px-2 py-1 bg-white dark:bg-slate-600 border border-slate-300 dark:border-slate-500 rounded text-[10px] font-mono">Esc</kbd>
+              <span data-text-ar="للإغلاق" data-text-en="Close">للإغلاق</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- JavaScript -->
