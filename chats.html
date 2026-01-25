@@ -48,6 +48,22 @@
       .dark *::-webkit-scrollbar-thumb:hover {
         background: #64748b;
       }
+      
+      /* Placeholder for contenteditable divs */
+      [contenteditable="true"][data-empty="true"]:empty::before {
+        content: attr(data-placeholder);
+        color: #94a3b8;
+        pointer-events: none;
+      }
+      .dark [contenteditable="true"][data-empty="true"]:empty::before {
+        color: #64748b;
+      }
+      
+      /* Variable tags styling */
+      .variable-tag {
+        user-select: none;
+        white-space: nowrap;
+      }
       /* Firefox */
       * {
         scrollbar-width: thin;
@@ -340,25 +356,25 @@
           </button>
 
           <div class="relative group">
-            <button
-              id="apps"
-              class="w-10 h-10 flex items-center justify-center rounded-lg cursor-pointer transition-colors duration-150 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100 relative overflow-visible"
+          <button
+            id="apps"
+            class="w-10 h-10 flex items-center justify-center rounded-lg cursor-pointer transition-colors duration-150 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100 relative overflow-visible"
+          >
+            <i
+              class="hgi-stroke hgi-dashboard-square-01 text-[24px]"
+              style="color: #003e5c"
+            ></i>
+            <div
+              class="tooltip absolute top-[calc(100%+8px)] left-1/2 -translate-x-1/2 bg-slate-900 dark:bg-slate-700 text-white dark:text-slate-100 px-2 py-1 rounded-md text-xs whitespace-nowrap opacity-0 pointer-events-none transition-opacity duration-150 z-[100] shadow-lg tooltip-element"
+              data-text-ar="التطبيقات"
+              data-text-en="Apps"
             >
-              <i
-                class="hgi-stroke hgi-dashboard-square-01 text-[24px]"
-                style="color: #003e5c"
-              ></i>
+              <span class="tooltip-text">التطبيقات</span>
               <div
-                class="tooltip absolute top-[calc(100%+8px)] left-1/2 -translate-x-1/2 bg-slate-900 dark:bg-slate-700 text-white dark:text-slate-100 px-2 py-1 rounded-md text-xs whitespace-nowrap opacity-0 pointer-events-none transition-opacity duration-150 z-[100] shadow-lg tooltip-element"
-                data-text-ar="التطبيقات"
-                data-text-en="Apps"
-              >
-                <span class="tooltip-text">التطبيقات</span>
-                <div
-                  class="absolute bottom-full left-1/2 -translate-x-1/2 border-[4px] border-transparent border-b-slate-900 dark:border-b-slate-700"
-                ></div>
-              </div>
-            </button>
+                class="absolute bottom-full left-1/2 -translate-x-1/2 border-[4px] border-transparent border-b-slate-900 dark:border-b-slate-700"
+              ></div>
+            </div>
+          </button>
             <div
               id="apps-menu"
               class="absolute top-full mt-2 w-80 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 opacity-0 invisible transform translate-y-[-10px] transition-all duration-200 z-50 apps-menu"
@@ -1453,6 +1469,19 @@
                   </div>
                 </div>
 
+                <!-- Media Preview (Hidden by default) -->
+                <div
+                  id="media-preview-section"
+                  class="hidden px-4 pt-2 pb-1 border-b border-slate-200 dark:border-slate-700"
+                >
+                  <div
+                    id="media-preview-container"
+                    class="flex flex-wrap gap-2"
+                  >
+                    <!-- Media previews will be added here -->
+                  </div>
+                </div>
+
                 <!-- Message Input Field -->
                 <div id="message-input-field" class="relative py-2 flex items-end transition-colors duration-200">
                   <textarea
@@ -1555,6 +1584,7 @@
                     </div>
                   </button>
                   <button
+                    id="template-btn"
                     class="message-icon-btn relative w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors duration-150"
                     data-title-ar="قالب"
                     data-title-en="Template"
@@ -1587,6 +1617,7 @@
                     </div>
                   </button>
                   <button
+                    id="voice-record-btn"
                     class="message-icon-btn relative w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors duration-150"
                     data-title-ar="صوت"
                     data-title-en="Voice"
@@ -1602,6 +1633,28 @@
                       ></div>
                     </div>
                   </button>
+                  <!-- Voice Recording Controls (Hidden by default) -->
+                  <div id="voice-recording-controls" class="hidden flex items-center gap-2">
+                    <span id="voice-recording-timer" class="text-xs font-medium text-red-600 dark:text-red-400">0:00</span>
+                    <button
+                      id="voice-pause-btn"
+                      class="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors duration-150"
+                      data-title-ar="إيقاف مؤقت"
+                      data-title-en="Pause"
+                      style="color: #003e5c"
+                    >
+                      <i class="hgi-stroke hgi-pause text-sm"></i>
+                    </button>
+                    <button
+                      id="voice-cancel-btn"
+                      class="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors duration-150"
+                      data-title-ar="إلغاء"
+                      data-title-en="Cancel"
+                      style="color: #ef4444"
+                    >
+                      <i class="hgi-stroke hgi-cancel-01 text-sm"></i>
+                    </button>
+                  </div>
                   <div class="flex-1"></div>
                   <!-- Send Button and Actions Dropdown (Grouped together) -->
                   <div class="flex items-center gap-0">
@@ -4198,7 +4251,327 @@
       </div>
     </div>
 
+    <!-- HTML Templates (Hidden) -->
+    <template id="template-sidebar-second-item">
+      <a class="sidebar-second-item flex items-center px-2 py-1.5 rounded-lg cursor-pointer mb-0.5 transition-colors duration-150 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100 no-underline">
+        <i class="sidebar-second-item-icon text-[16px] me-2 flex-shrink-0"></i>
+        <span class="sidebar-second-item-text text-[0.9375rem] font-medium"></span>
+      </a>
+    </template>
+
+    <template id="template-sidebar-second-item-with-submenu">
+      <div class="sidebar-second-item has-submenu flex items-center px-2 py-1.5 rounded-lg cursor-pointer mb-0.5 transition-colors duration-150 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100">
+        <a class="flex items-center flex-1 no-underline">
+          <i class="sidebar-second-item-icon text-[16px] me-2 flex-shrink-0"></i>
+          <span class="sidebar-second-item-text text-[0.9375rem] font-medium flex-1"></span>
+        </a>
+        <i class="hgi-stroke hgi-arrow-right-01 text-[16px] sidebar-second-item-arrow transition-transform duration-150"></i>
+        <div class="sidebar-second-submenu max-h-0 overflow-hidden transition-all duration-300 ps-2"></div>
+      </div>
+    </template>
+
+    <template id="template-sidebar-second-section-title">
+      <div class="px-3 py-1.5 mb-1">
+        <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500"></h3>
+      </div>
+    </template>
+
+    <template id="template-chat-item">
+      <div class="chat-item flex items-center gap-3 p-3 rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors duration-150 border-b border-slate-200 dark:border-slate-700 last:border-b-0" data-chat-id="">
+        <div class="flex-shrink-0 relative">
+          <img class="w-12 h-12 rounded-full object-cover" src="" alt="" />
+          <div class="absolute -bottom-1 -end-1 w-4 h-4 rounded-full border-2 border-white dark:border-slate-800 flex items-center justify-center">
+            <i class="chat-channel-icon text-xs"></i>
+          </div>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center justify-between mb-1">
+            <h4 class="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate chat-name"></h4>
+            <span class="text-xs text-slate-500 dark:text-slate-400 flex-shrink-0 chat-time"></span>
+          </div>
+          <div class="flex items-center justify-between">
+            <p class="text-xs text-slate-600 dark:text-slate-400 truncate chat-last-message"></p>
+            <div class="flex items-center gap-1 flex-shrink-0">
+              <span class="chat-unread-badge hidden w-5 h-5 rounded-full bg-blue-600 dark:bg-blue-500 text-white text-[10px] flex items-center justify-center font-medium"></span>
+              <i class="chat-message-status-icon text-xs text-slate-400 dark:text-slate-500"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <template id="template-message-item">
+      <div class="message-item flex items-start gap-3 mb-4" data-message-id="">
+        <img class="w-8 h-8 rounded-full object-cover flex-shrink-0 message-avatar" src="" alt="" />
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2 mb-1">
+            <span class="text-xs font-medium text-slate-900 dark:text-slate-100 message-sender"></span>
+            <span class="text-[10px] text-slate-500 dark:text-slate-400 message-time"></span>
+          </div>
+          <div class="message-content bg-slate-100 dark:bg-slate-700 rounded-lg px-3 py-2 inline-block max-w-[80%]">
+            <p class="text-sm text-slate-900 dark:text-slate-100 message-text"></p>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <template id="template-order-item">
+      <div class="order-item p-3 rounded-lg border border-slate-200 dark:border-slate-700 mb-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors duration-150" data-order-id="">
+        <div class="flex items-start justify-between mb-2">
+          <div class="flex-1">
+            <h4 class="text-sm font-semibold text-slate-900 dark:text-slate-100 order-title"></h4>
+            <p class="text-xs text-slate-500 dark:text-slate-400 order-id"></p>
+          </div>
+          <span class="order-status-badge px-2 py-1 rounded text-xs font-medium"></span>
+        </div>
+        <div class="order-details hidden space-y-2 pt-2 border-t border-slate-200 dark:border-slate-700">
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-slate-500 dark:text-slate-400">المنتج:</span>
+            <span class="text-xs text-slate-900 dark:text-slate-100 order-product"></span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-slate-500 dark:text-slate-400">الكمية:</span>
+            <span class="text-xs text-slate-900 dark:text-slate-100 order-quantity"></span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-slate-500 dark:text-slate-400">السعر:</span>
+            <span class="text-xs text-slate-900 dark:text-slate-100 order-price"></span>
+          </div>
+        </div>
+      </div>
+    </template>
+
     <!-- JavaScript -->
+    <!-- Managers -->
+    <script src="js/managers/firstSidebarManager.js"></script>
+    <!-- Main -->
     <script src="js/main.js"></script>
+  <!-- Template Selection Modal -->
+  <div
+    id="template-modal"
+    class="fixed inset-0 bg-black/50 dark:bg-black/70 z-[1000] flex items-center justify-center opacity-0 invisible transition-opacity duration-200"
+  >
+    <div
+      class="bg-white dark:bg-slate-800 rounded-lg shadow-2xl w-[90%] max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
+    >
+      <!-- Modal Header -->
+      <div
+        class="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-700"
+      >
+        <div class="flex items-center gap-3">
+          <button
+            id="template-modal-back"
+            class="hidden w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors duration-150"
+          >
+            <i
+              class="hgi-stroke hgi-arrow-right-01 text-slate-500 dark:text-slate-400"
+            ></i>
+          </button>
+          <h3
+            id="template-modal-title"
+            class="text-lg font-semibold text-slate-900 dark:text-slate-100"
+            data-text-ar="اختر قالب واتساب"
+            data-text-en="Select WhatsApp Template"
+          >
+            اختر قالب واتساب
+          </h3>
+        </div>
+        <button
+          id="template-modal-close"
+          class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors duration-150"
+        >
+          <i
+            class="hgi-stroke hgi-cancel-01 text-slate-500 dark:text-slate-400"
+          ></i>
+        </button>
+      </div>
+
+      <!-- Modal Content -->
+      <div class="flex-1 overflow-y-auto p-6">
+        <!-- Template List -->
+        <div id="template-list" class="space-y-3 mb-6">
+          <!-- Templates will be dynamically added here -->
+        </div>
+
+        <!-- Template Settings (Hidden by default) -->
+        <div id="template-settings" class="hidden">
+          <!-- Message Preview -->
+          <div
+            id="template-message-preview"
+            class="mb-4 p-4 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700"
+          >
+            <h4
+              class="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-3"
+              data-text-ar="معاينة الرسالة"
+              data-text-en="Message Preview"
+            >
+              معاينة الرسالة
+            </h4>
+            <div
+              id="template-preview-content"
+              class="max-h-96 overflow-y-auto"
+            >
+              <!-- Preview will be dynamically added here -->
+            </div>
+          </div>
+
+          <!-- Template Settings -->
+          <div
+            class="bg-slate-50 dark:bg-slate-900 rounded-lg p-4 border border-slate-200 dark:border-slate-700"
+          >
+            <h4
+              class="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-3"
+              id="template-settings-title"
+            >
+              إعدادات القالب
+            </h4>
+            <div id="template-settings-content">
+              <!-- Settings will be dynamically added based on template type -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div
+        class="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-200 dark:border-slate-700"
+      >
+        <button
+          id="template-modal-cancel"
+          class="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors duration-150"
+          data-text-ar="إلغاء"
+          data-text-en="Cancel"
+        >
+          إلغاء
+        </button>
+        <button
+          id="template-modal-send"
+          class="px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors duration-150"
+          style="background-color: #0090D6;"
+          data-text-ar="إرسال"
+          data-text-en="Send"
+        >
+          إرسال
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Flow Selection Modal -->
+  <div
+    id="flow-selection-modal"
+    class="hidden fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm"
+  >
+    <div
+      class="bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 w-full max-w-3xl mx-4 max-h-[90vh] flex flex-col"
+    >
+      <!-- Modal Header -->
+      <div
+        class="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex-shrink-0"
+      >
+        <h3
+          class="text-lg font-semibold text-slate-900 dark:text-slate-100"
+          data-text-ar="اختر التدفق أو العقدة"
+          data-text-en="Select Flow or Node"
+        >
+          اختر التدفق أو العقدة
+        </h3>
+        <button
+          id="flow-selection-modal-close"
+          class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors duration-150"
+          type="button"
+        >
+          <i class="hgi-stroke hgi-cancel-01 text-slate-600 dark:text-slate-400"></i>
+        </button>
+      </div>
+
+      <!-- Tabs -->
+      <div class="flex items-center border-b border-slate-200 dark:border-slate-700 px-6 flex-shrink-0">
+        <button
+          id="flow-selection-tab-flows"
+          class="px-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-300 border-b-2 border-blue-500 transition-colors duration-150"
+          data-text-ar="التدفقات"
+          data-text-en="Flows"
+        >
+          التدفقات
+        </button>
+        <button
+          id="flow-selection-tab-nodes"
+          class="px-4 py-3 text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition-colors duration-150"
+          data-text-ar="العقد"
+          data-text-en="Nodes"
+        >
+          العقد
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="flex-1 overflow-hidden flex flex-col">
+        <!-- Flows Tab Content -->
+        <div id="flow-selection-flows-content" class="flex-1 flex flex-col overflow-hidden">
+          <!-- Search Box -->
+          <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex-shrink-0">
+            <input
+              type="text"
+              id="flow-selection-search"
+              class="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="بحث عن التدفقات..."
+              data-placeholder-ar="بحث عن التدفقات..."
+              data-placeholder-en="Search flows..."
+            />
+          </div>
+          
+          <!-- Flows Grid -->
+          <div id="flow-selection-flows-grid" class="flex-1 overflow-y-auto px-6 py-4">
+            <!-- Flows will be dynamically added here -->
+          </div>
+          
+          <!-- Flows Pagination -->
+          <div id="flow-selection-flows-pagination" class="px-6 py-4 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between flex-shrink-0">
+            <!-- Pagination will be dynamically added here -->
+          </div>
+        </div>
+
+        <!-- Nodes Tab Content -->
+        <div id="flow-selection-nodes-content" class="hidden flex-1 flex flex-col overflow-hidden">
+          <!-- Search Box -->
+          <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex-shrink-0">
+            <input
+              type="text"
+              id="flow-selection-nodes-search"
+              class="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="بحث عن العقد..."
+              data-placeholder-ar="بحث عن العقد..."
+              data-placeholder-en="Search nodes..."
+            />
+          </div>
+          
+          <!-- Nodes List -->
+          <div id="flow-selection-nodes-list" class="flex-1 overflow-y-auto px-6 py-4">
+            <!-- Nodes will be dynamically added here -->
+          </div>
+          
+          <!-- Nodes Pagination -->
+          <div id="flow-selection-nodes-pagination" class="px-6 py-4 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between flex-shrink-0">
+            <!-- Pagination will be dynamically added here -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div
+        class="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-200 dark:border-slate-700 flex-shrink-0"
+      >
+        <button
+          id="flow-selection-modal-cancel"
+          class="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors duration-150"
+          data-text-ar="إلغاء"
+          data-text-en="Cancel"
+        >
+          إلغاء
+        </button>
+      </div>
+    </div>
+  </div>
   </body>
 </html>

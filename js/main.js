@@ -1,4 +1,4 @@
-// Main Application JavaScript
+﻿// Main Application JavaScript
 
 // Translations Object
 const translations = {
@@ -351,7 +351,11 @@ const languageManager = {
             <span>${item}</span>
             ${
               !isLast
-                ? `<i class="hgi-stroke hgi-arrow-right-01 text-xs" style="color: #003e5c"></i>`
+                ? (() => {
+                    const isDark = document.documentElement.classList.contains("dark");
+                    const arrowColor = isDark ? "#94a3b8" : "#003E5C";
+                    return `<i class="hgi-stroke hgi-arrow-right-01 text-xs" style="color: ${arrowColor}"></i>`;
+                  })()
                 : ""
             }
           `;
@@ -530,6 +534,10 @@ const themeManager = {
   init() {
     const savedTheme = localStorage.getItem("theme") || "light";
     this.setTheme(savedTheme);
+    // Update colors after a short delay to ensure DOM is ready
+    setTimeout(() => {
+      this.updateThemeColors(savedTheme);
+    }, 100);
   },
 
   setTheme(theme) {
@@ -540,6 +548,65 @@ const themeManager = {
     }
     localStorage.setItem("theme", theme);
     this.updateThemeIcon(theme);
+    this.updateThemeColors(theme);
+  },
+
+  updateThemeColors(theme) {
+    const isDark = theme === "dark";
+    // Color mappings: light mode color -> dark mode color
+    const colorMap = {
+      "#003E5C": isDark ? "#94a3b8" : "#003E5C", // Dark blue -> Light gray in dark mode
+      "#003e5c": isDark ? "#94a3b8" : "#003e5c",
+    };
+
+    // Update all elements with inline color styles
+    const elementsWithColor = document.querySelectorAll("[style*='color: #003E5C'], [style*='color: #003e5c']");
+    elementsWithColor.forEach((el) => {
+      const style = el.getAttribute("style") || "";
+      if (style.includes("color: #003E5C") || style.includes("color: #003e5c")) {
+        const newColor = isDark ? "#94a3b8" : "#003E5C";
+        el.setAttribute("style", style.replace(/color:\s*#003[Ee]5[Cc]/g, `color: ${newColor}`));
+      }
+    });
+
+    // Update sidebar first items icons (non-active)
+    const sidebarFirstItems = document.querySelectorAll(".sidebar-first-item:not([style*='background-color: #0090D6'])");
+    sidebarFirstItems.forEach((item) => {
+      const icon = item.querySelector("i");
+      if (icon && icon.style.color === "#003e5c" || icon.style.color === "#003E5C") {
+        icon.style.color = isDark ? "#94a3b8" : "#003E5C";
+      }
+    });
+
+    // Update sidebar second items (non-active)
+    const sidebarSecondItems = document.querySelectorAll(".sidebar-second-item:not([style*='background-color: #0090D6']), .sidebar-second-submenu-item:not([style*='background-color: #0090D6'])");
+    sidebarSecondItems.forEach((item) => {
+      const icon = item.querySelector("i");
+      const text = item.querySelector(".sidebar-second-item-text");
+      if (icon && (icon.style.color === "#003E5C" || icon.style.color === "#003e5c")) {
+        icon.style.color = isDark ? "#94a3b8" : "#003E5C";
+      }
+      if (text && (text.style.color === "#003E5C" || text.style.color === "#003e5c")) {
+        text.style.color = isDark ? "#94a3b8" : "#003E5C";
+      }
+    });
+
+    // Update topbar icons
+    const topbarIcons = document.querySelectorAll("#topbar i[style*='color: #003E5C'], #topbar i[style*='color: #003e5c']");
+    topbarIcons.forEach((icon) => {
+      const style = icon.getAttribute("style") || "";
+      if (style.includes("color: #003E5C") || style.includes("color: #003e5c")) {
+        const newColor = isDark ? "#94a3b8" : "#003E5C";
+        icon.setAttribute("style", style.replace(/color:\s*#003[Ee]5[Cc]/g, `color: ${newColor}`));
+      }
+    });
+
+    // Update apps menu icons
+    const appsMenuIcons = document.querySelectorAll("#apps-menu i[style*='color: #0090D6']");
+    appsMenuIcons.forEach((icon) => {
+      // Keep #0090D6 for apps menu icons as it's the brand color
+      // But we can adjust if needed
+    });
   },
 
   toggleTheme() {
@@ -555,8 +622,9 @@ const themeManager = {
     const tooltipText = tooltip?.querySelector(".tooltip-text");
 
     if (themeIcon) {
+      const iconColor = theme === "dark" ? "#94a3b8" : "#003E5C";
       if (theme === "dark") {
-        themeIcon.innerHTML = `<i class="hgi-stroke hgi-sun-01 text-[24px]" style="color: #003E5C"></i>`;
+        themeIcon.innerHTML = `<i class="hgi-stroke hgi-sun-01 text-[24px]" style="color: ${iconColor}"></i>`;
         if (tooltipText) {
           const currentLang =
             document.documentElement.getAttribute("lang") || "ar";
@@ -568,7 +636,7 @@ const themeManager = {
           }
         }
       } else {
-        themeIcon.innerHTML = `<i class="hgi-stroke hgi-moon-02 text-[24px]" style="color: #003E5C"></i>`;
+        themeIcon.innerHTML = `<i class="hgi-stroke hgi-moon-02 text-[24px]" style="color: ${iconColor}"></i>`;
         if (tooltipText) {
           const currentLang =
             document.documentElement.getAttribute("lang") || "ar";
@@ -758,111 +826,13 @@ const sidebarManager = {
 // Menu Management
 const menuManager = {
   init() {
-    this.setupFirstSidebar();
+    // تهيئة القائمة الأولى (من ملف منفصل)
+    if (window.firstSidebarManager) {
+      window.firstSidebarManager.init();
+    }
+    
+    // تهيئة القائمة الثانية
     this.setupSecondSidebar();
-  },
-
-  setupFirstSidebar() {
-    const firstSidebarItems = document.querySelectorAll(".sidebar-first-item");
-    firstSidebarItems.forEach((item, index) => {
-      item.addEventListener("click", () => {
-        // Get the section page href
-        const sectionPageHref = this.getSectionPageHref(index);
-
-        // Navigate to the section page
-        if (sectionPageHref) {
-          window.location.href = sectionPageHref;
-        }
-      });
-
-      // Show tooltip on hover
-      item.addEventListener("mouseenter", () => {
-        const tooltip = item.querySelector(".tooltip-element");
-        if (tooltip) {
-          tooltip.classList.remove("opacity-0");
-          tooltip.classList.add("opacity-100");
-          const isRTL = document.documentElement.getAttribute("dir") === "rtl";
-          if (isRTL) {
-            tooltip.classList.remove("translate-x-[10px]");
-            tooltip.classList.add("translate-x-0");
-          } else {
-            tooltip.classList.remove("translate-x-[-10px]");
-            tooltip.classList.add("translate-x-0");
-          }
-        }
-      });
-
-      item.addEventListener("mouseleave", () => {
-        const tooltip = item.querySelector(".tooltip-element");
-        if (tooltip) {
-          tooltip.classList.remove("opacity-100", "translate-x-0");
-          tooltip.classList.add("opacity-0");
-          const isRTL = document.documentElement.getAttribute("dir") === "rtl";
-          if (isRTL) {
-            tooltip.classList.add("translate-x-[10px]");
-          } else {
-            tooltip.classList.add("translate-x-[-10px]");
-          }
-        }
-      });
-    });
-
-    // Set active section based on current page
-    this.setActiveSectionFromPage();
-  },
-
-  setActiveSectionFromPage() {
-    const firstSidebarItems = document.querySelectorAll(".sidebar-first-item");
-    const currentPage =
-      window.location.pathname.split("/").pop() || "index.html";
-
-    // Map pages to section indices
-    const pageToIndex = {
-      "index.html": 0,
-      "chats.html": 1,
-      "flows.html": 2,
-      "ai.html": 3,
-      "orders.html": 4,
-      "customers.html": 5,
-      "products.html": 6,
-      "stores.html": 7,
-      "library.html": 8,
-      "settings.html": 9,
-    };
-
-    const activeIndex = pageToIndex[currentPage] ?? 0;
-
-    // Use requestAnimationFrame to ensure DOM is ready and prevent flickering
-    requestAnimationFrame(() => {
-      // Remove active from all items
-      firstSidebarItems.forEach((i) => {
-        i.classList.remove("text-blue-600", "dark:text-blue-400");
-        i.classList.add("text-slate-500", "dark:text-slate-400");
-        i.style.backgroundColor = "";
-      });
-
-      // Set active item
-      if (firstSidebarItems[activeIndex]) {
-        firstSidebarItems[activeIndex].classList.remove(
-          "text-slate-500",
-          "dark:text-slate-400"
-        );
-        firstSidebarItems[activeIndex].classList.add(
-          "text-white"
-        );
-        firstSidebarItems[activeIndex].style.backgroundColor = "#0090D6";
-        // Update icon color to white
-        const icon = firstSidebarItems[activeIndex].querySelector("i");
-        if (icon) {
-          icon.style.color = "#ffffff";
-        }
-
-        // Update second sidebar after a small delay to prevent flickering
-        requestAnimationFrame(() => {
-          this.updateSecondSidebar(activeIndex);
-        });
-      }
-    });
   },
 
   setupSecondSidebar() {
@@ -907,10 +877,12 @@ const menuManager = {
             i.classList.remove("text-white");
             i.style.backgroundColor = "";
             // Reset icon and text colors
+            const isDark = document.documentElement.classList.contains("dark");
+            const resetColor = isDark ? "#94a3b8" : "#003E5C";
             const icon = i.querySelector("i");
             const text = i.querySelector(".sidebar-second-item-text");
-            if (icon) icon.style.color = "#003E5C";
-            if (text) text.style.color = "#003E5C";
+            if (icon) icon.style.color = resetColor;
+            if (text) text.style.color = resetColor;
           });
         // Add active to clicked item
         item.classList.add("text-white");
@@ -942,10 +914,12 @@ const menuManager = {
             i.classList.remove("text-white");
             i.style.backgroundColor = "";
             // Reset icon and text colors
+            const isDark = document.documentElement.classList.contains("dark");
+            const resetColor = isDark ? "#94a3b8" : "#003E5C";
             const icon = i.querySelector("i");
             const text = i.querySelector(".sidebar-second-item-text");
-            if (icon) icon.style.color = "#003E5C";
-            if (text) text.style.color = "#003E5C";
+            if (icon) icon.style.color = resetColor;
+            if (text) text.style.color = resetColor;
           });
         // Add active to clicked item
         item.classList.add("text-white");
@@ -980,62 +954,102 @@ const menuManager = {
         sidebarTitle.textContent = currentSection.title;
       }
 
-      // Update menu items
+      // Update menu items using HTML templates
       const sidebarMenu = document.getElementById("sidebar-second-menu");
       if (sidebarMenu) {
+        // Clear existing content
+        sidebarMenu.innerHTML = "";
+        
         let isFirstItem = true;
-        sidebarMenu.innerHTML = currentSection.items
-          .map((item, index) => {
-            if (item.type === "sectionTitle") {
-              const marginTop = isFirstItem ? "" : "mt-2";
-              isFirstItem = false;
-              return `
-            <div class="px-3 py-1.5 ${marginTop} mb-1">
-              <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">${item.name}</h3>
-            </div>
-          `;
-            } else if (item.submenu && item.submenu.length > 0) {
-              isFirstItem = false;
-              const mainHref = item.href ? `href="${item.href}"` : "";
-              return `
-            <div class="sidebar-second-item has-submenu flex items-center px-2 py-1.5 rounded-lg cursor-pointer mb-0.5 transition-colors duration-150 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100">
-              <a ${mainHref} class="flex items-center flex-1 no-underline">
-                <i class="${
-                  item.iconClass
-                } text-[16px] me-2 flex-shrink-0" style="color: #003E5C"></i>
-                <span class="sidebar-second-item-text text-[0.9375rem] font-medium flex-1" style="color: #003E5C">${
-                  item.name
-                }</span>
-              </a>
-              <i class="hgi-stroke hgi-arrow-right-01 text-[16px] sidebar-second-item-arrow transition-transform duration-150" style="color: #003E5C"></i>
-              <div class="sidebar-second-submenu max-h-0 overflow-hidden transition-all duration-300 ps-2">
-                ${item.submenu
-                  .map((subItem) => {
-                    const subHref = subItem.href
-                      ? `href="${subItem.href}"`
-                      : "";
-                    return `
-                  <a ${subHref} class="sidebar-second-submenu-item flex items-center px-2 py-1 pe-6 rounded-lg cursor-pointer mb-0.5 transition-colors duration-150 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100 text-sm no-underline">
-                    ${subItem.name}
-                  </a>
-                `;
-                  })
-                  .join("")}
-              </div>
-            </div>
-          `;
-            } else {
-              isFirstItem = false;
-              const itemHref = item.href ? `href="${item.href}"` : "";
-              return `
-            <a ${itemHref} class="sidebar-second-item flex items-center px-2 py-1.5 rounded-lg cursor-pointer mb-0.5 transition-colors duration-150 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100 no-underline">
-              <i class="${item.iconClass} text-[16px] me-2 flex-shrink-0" style="color: #003E5C"></i>
-              <span class="sidebar-second-item-text text-[0.9375rem] font-medium" style="color: #003E5C">${item.name}</span>
-            </a>
-          `;
+        const isDark = document.documentElement.classList.contains("dark");
+        const iconColor = isDark ? "#94a3b8" : "#003E5C";
+        
+        currentSection.items.forEach((item) => {
+          if (item.type === "sectionTitle") {
+            // Use template for section title
+            const template = document.getElementById("template-sidebar-second-section-title");
+            if (template) {
+              const clone = template.content.cloneNode(true);
+              const sectionDiv = clone.querySelector("div");
+              if (sectionDiv) {
+                if (!isFirstItem) {
+                  sectionDiv.classList.add("mt-2");
+                }
+                const h3 = sectionDiv.querySelector("h3");
+                if (h3) {
+                  h3.textContent = item.name;
+                }
+                sidebarMenu.appendChild(clone);
+              }
             }
-          })
-          .join("");
+            isFirstItem = false;
+          } else if (item.submenu && item.submenu.length > 0) {
+            // Use template for item with submenu
+            const template = document.getElementById("template-sidebar-second-item-with-submenu");
+            if (template) {
+              const clone = template.content.cloneNode(true);
+              const itemDiv = clone.querySelector("div");
+              if (itemDiv) {
+                const link = itemDiv.querySelector("a");
+                if (link && item.href) {
+                  link.href = item.href;
+                }
+                const icon = itemDiv.querySelector(".sidebar-second-item-icon");
+                if (icon) {
+                  icon.className = `${item.iconClass} text-[16px] me-2 flex-shrink-0`;
+                  icon.style.color = iconColor;
+                }
+                const text = itemDiv.querySelector(".sidebar-second-item-text");
+                if (text) {
+                  text.textContent = item.name;
+                  text.style.color = iconColor;
+                }
+                const arrow = itemDiv.querySelector(".sidebar-second-item-arrow");
+                if (arrow) {
+                  arrow.style.color = iconColor;
+                }
+                const submenu = itemDiv.querySelector(".sidebar-second-submenu");
+                if (submenu) {
+                  item.submenu.forEach((subItem) => {
+                    const subLink = document.createElement("a");
+                    if (subItem.href) {
+                      subLink.href = subItem.href;
+                    }
+                    subLink.className = "sidebar-second-submenu-item flex items-center px-2 py-1 pe-6 rounded-lg cursor-pointer mb-0.5 transition-colors duration-150 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100 text-sm no-underline";
+                    subLink.textContent = subItem.name;
+                    submenu.appendChild(subLink);
+                  });
+                }
+                sidebarMenu.appendChild(clone);
+              }
+            }
+            isFirstItem = false;
+          } else {
+            // Use template for regular item
+            const template = document.getElementById("template-sidebar-second-item");
+            if (template) {
+              const clone = template.content.cloneNode(true);
+              const itemLink = clone.querySelector("a");
+              if (itemLink) {
+                if (item.href) {
+                  itemLink.href = item.href;
+                }
+                const icon = itemLink.querySelector(".sidebar-second-item-icon");
+                if (icon) {
+                  icon.className = `${item.iconClass} text-[16px] me-2 flex-shrink-0`;
+                  icon.style.color = iconColor;
+                }
+                const text = itemLink.querySelector(".sidebar-second-item-text");
+                if (text) {
+                  text.textContent = item.name;
+                  text.style.color = iconColor;
+                }
+                sidebarMenu.appendChild(clone);
+              }
+            }
+            isFirstItem = false;
+          }
+        });
 
         // Re-setup event listeners for new items after DOM update
         requestAnimationFrame(() => {
@@ -1059,10 +1073,12 @@ const menuManager = {
       item.classList.remove("text-white");
       item.style.backgroundColor = "";
       // Reset icon and text colors
+      const isDark = document.documentElement.classList.contains("dark");
+      const resetColor = isDark ? "#94a3b8" : "#003E5C";
       const icon = item.querySelector("i");
       const text = item.querySelector(".sidebar-second-item-text");
-      if (icon) icon.style.color = "#003E5C";
-      if (text) text.style.color = "#003E5C";
+      if (icon) icon.style.color = resetColor;
+      if (text) text.style.color = resetColor;
     });
 
     // Find all links in second sidebar and check their href
@@ -1128,21 +1144,12 @@ const menuManager = {
     );
   },
 
-  // Get the section page href
+  // Get the section page href (delegated to firstSidebarManager)
   getSectionPageHref(sectionIndex, lang = "ar") {
-    const sectionPages = [
-      "index.html", // home (0)
-      "chats.html", // chats (1)
-      "flows.html", // flows (2)
-      "ai.html", // ai (3)
-      "orders.html", // orders (4)
-      "customers.html", // customers (5)
-      "products.html", // products (6)
-      "stores.html", // stores (7)
-      "library.html", // library (8)
-      "settings.html", // settings (9)
-    ];
-    return sectionPages[sectionIndex] || null;
+    if (window.firstSidebarManager) {
+      return window.firstSidebarManager.getSectionPageHref(sectionIndex, lang);
+    }
+    return null;
   },
 
   // Get the first item href for a section
@@ -1274,19 +1281,15 @@ const menuManager = {
   },
 
   getCurrentSectionIndex() {
-    const firstSidebarItems = document.querySelectorAll(".sidebar-first-item");
-    let activeIndex = 0;
-    firstSidebarItems.forEach((item, index) => {
-      if (
-        item.style.backgroundColor === "rgb(0, 144, 214)" ||
-        item.style.backgroundColor === "#0090D6"
-      ) {
-        activeIndex = index;
-      }
-    });
-    return activeIndex;
+    if (window.firstSidebarManager) {
+      return window.firstSidebarManager.getCurrentSectionIndex();
+    }
+    return 0;
   },
 };
+
+// جعل menuManager متاحاً عالمياً للوصول من ملفات أخرى
+window.menuManager = menuManager;
 
 // Initialize Application
 document.addEventListener("DOMContentLoaded", () => {
@@ -1311,17 +1314,9 @@ document.addEventListener("DOMContentLoaded", () => {
   sidebarManager.init();
 
   // Clear any default active state from HTML before setting up menus
-  const firstSidebarItems = document.querySelectorAll(".sidebar-first-item");
-  firstSidebarItems.forEach((item) => {
-    item.classList.remove("text-white");
-    item.classList.add("text-slate-500", "dark:text-slate-400");
-    item.style.backgroundColor = "";
-    // Reset icon color
-    const icon = item.querySelector("i");
-    if (icon) {
-      icon.style.color = "#003e5c";
-    }
-  });
+  if (window.firstSidebarManager) {
+    window.firstSidebarManager.resetActiveState();
+  }
 
   // Initialize menu manager (this will set the correct active state)
   menuManager.init();
@@ -1946,6 +1941,86 @@ function loadChatsForTab(tabId) {
         avatar:
           "https://ui-avatars.com/api/?name=خالد+سعيد&background=25D366&color=fff&size=128",
       },
+      {
+        id: 10,
+        name: "مريم حسن",
+        channel: "tiktok",
+        channelName: "TikTok",
+        lastMessage: "شكراً على المحتوى الرائع",
+        messageStatus: "read",
+        time: "11:45 ص",
+        createdAt: "2024-01-15",
+        unread: 0,
+        status: "open",
+        tags: ["شكر"],
+        assignedTo: "سارة علي",
+        avatar:
+          "https://ui-avatars.com/api/?name=مريم+حسن&background=000000&color=fff&size=128",
+      },
+      {
+        id: 11,
+        name: "عبدالله يوسف",
+        channel: "webchat",
+        channelName: "Web Chat",
+        lastMessage: "أحتاج معلومات عن المنتج",
+        messageStatus: "sent",
+        time: "11:30 ص",
+        createdAt: "2024-01-15",
+        unread: 1,
+        status: "open",
+        tags: ["استفسار"],
+        assignedTo: "محمد علي",
+        avatar:
+          "https://ui-avatars.com/api/?name=عبدالله+يوسف&background=0090D6&color=fff&size=128",
+      },
+      {
+        id: 12,
+        name: "هند محمد",
+        channel: "sms",
+        channelName: "SMS",
+        lastMessage: "تم استلام الطلبية بنجاح",
+        messageStatus: "delivered",
+        time: "11:15 ص",
+        createdAt: "2024-01-15",
+        unread: 0,
+        status: "resolved",
+        tags: ["طلب"],
+        assignedTo: "فاطمة أحمد",
+        avatar:
+          "https://ui-avatars.com/api/?name=هند+محمد&background=4CAF50&color=fff&size=128",
+      },
+      {
+        id: 13,
+        name: "طارق أحمد",
+        channel: "email",
+        channelName: "Email",
+        lastMessage: "شكراً على الرد السريع",
+        messageStatus: "read",
+        time: "10:50 ص",
+        createdAt: "2024-01-15",
+        unread: 2,
+        status: "open",
+        tags: ["متابعة"],
+        assignedTo: "خالد سعيد",
+        avatar:
+          "https://ui-avatars.com/api/?name=طارق+أحمد&background=EA4335&color=fff&size=128",
+      },
+      {
+        id: 14,
+        name: "تذكرة #1234",
+        channel: "support-tickets",
+        channelName: "Support Tickets",
+        lastMessage: "مشكلة في تسجيل الدخول",
+        messageStatus: "sent",
+        time: "10:40 ص",
+        createdAt: "2024-01-15",
+        unread: 1,
+        status: "open",
+        tags: ["عاجل", "مشكلة تقنية"],
+        assignedTo: "أحمد محمد",
+        avatar:
+          "https://ui-avatars.com/api/?name=Ticket+1234&background=FF6B6B&color=fff&size=128",
+      },
     ],
     unassigned: [
       {
@@ -2177,6 +2252,11 @@ function loadChatsForTab(tabId) {
     telegram: "hgi-telegram",
     instagram: "hgi-instagram",
     messenger: "hgi-messenger",
+    tiktok: "hgi-tiktok",
+    webchat: "hgi-message-01",
+    sms: "hgi-bubble-chat",
+    email: "hgi-mail-01",
+    "support-tickets": "hgi-ticket-01",
   };
 
   // Channel colors
@@ -2185,13 +2265,18 @@ function loadChatsForTab(tabId) {
     telegram: "#0088cc",
     instagram: "#E4405F",
     messenger: "#0084FF",
+    tiktok: "#000000",
+    webchat: "#0090D6",
+    sms: "#4CAF50",
+    email: "#EA4335",
+    "support-tickets": "#FF6B6B",
   };
 
   // Message status icons
   const messageStatusIcons = {
-    sent: "hgi-check-01",
-    delivered: "hgi-check-02",
-    read: "hgi-check-02",
+    sent: "hgi-tick-02",
+    delivered: "hgi-tick-double-02",
+    read: "hgi-tick-double-02",
   };
 
   tabContent.innerHTML = chats
@@ -2237,13 +2322,13 @@ function loadChatsForTab(tabId) {
               </div>
 
               <!-- Last Message with Status -->
-              <div class="flex items-center gap-2 mb-1.5">
+              <div class="flex items-center gap-1 mb-1.5">
                 <i class="hgi-stroke ${statusIcon} text-xs flex-shrink-0" style="color: ${
         chat.messageStatus === "read"
-          ? "#25D366"
+          ? "#00FF00"
           : chat.messageStatus === "delivered"
-          ? "#0088cc"
-          : "#94a3b8"
+          ? "#ffffff"
+          : "#ffffff"
       }"></i>
                 <p class="text-xs text-slate-600 dark:text-slate-400 truncate flex-1">
                   ${chat.lastMessage}
@@ -2408,8 +2493,10 @@ function setupExpandChats() {
 
       const icon = expandBtn.querySelector("i");
       if (icon) {
+        const isDark = document.documentElement.classList.contains("dark");
+        const iconColor = isDark ? "#94a3b8" : "#003E5C";
         icon.className = "hgi-stroke hgi-square-arrow-shrink-01 text-lg";
-        icon.style.color = "#003e5c";
+        icon.style.color = iconColor;
       }
 
       expandBtn.setAttribute(
@@ -2424,8 +2511,10 @@ function setupExpandChats() {
 
       const icon = expandBtn.querySelector("i");
       if (icon) {
+        const isDark = document.documentElement.classList.contains("dark");
+        const iconColor = isDark ? "#94a3b8" : "#003E5C";
         icon.className = "hgi-stroke hgi-square-arrow-expand-01 text-lg";
-        icon.style.color = "#003e5c";
+        icon.style.color = iconColor;
       }
 
       expandBtn.setAttribute(
@@ -2552,6 +2641,13 @@ function loadMessagesForChat(chat) {
   const messagesOrdersTabs = document.getElementById("messages-orders-tabs");
   if (messagesOrdersTabs) {
     messagesOrdersTabs.classList.remove("hidden");
+  }
+
+  // Show message input container
+  if (messageInputContainer) {
+    messageInputContainer.classList.remove("hidden");
+    // Also ensure display is not set to none
+    messageInputContainer.style.display = "";
   }
 
   // Show and update messages header
@@ -3096,7 +3192,9 @@ function loadMessagesForChat(chat) {
           moreActionsBtn.setAttribute("data-title-ar", "عرض");
           moreActionsBtn.setAttribute("data-title-en", "View");
         }
-        moreActionsIcon.style.color = "#003E5C";
+        const isDark = document.documentElement.classList.contains("dark");
+        const iconColor = isDark ? "#94a3b8" : "#003E5C";
+        moreActionsIcon.style.color = iconColor;
 
         // Update tooltip text if it exists
         const tooltip = moreActionsBtn.querySelector(".tooltip-element");
@@ -5425,6 +5523,11 @@ function loadMessagesForChat(chat) {
     });
   }
 
+  // Store messages globally
+  if (!window.currentChatMessages) {
+    window.currentChatMessages = [];
+  }
+
   // Sample messages data
   const messages = [
     {
@@ -5437,6 +5540,22 @@ function loadMessagesForChat(chat) {
       time: "10:30 ص",
       type: "text",
       status: "read",
+    },
+    {
+      id: 19,
+      text: "شكراً لك على المساعدة",
+      sender: "other",
+      senderName: "محمد أحمد علي",
+      senderAvatar:
+        "https://ui-avatars.com/api/?name=محمد+أحمد+علي&size=32&background=DBF3FF&color=003E5C",
+      time: "10:50 ص",
+      type: "text",
+      replyTo: {
+        messageId: 1,
+        text: "مرحباً، كيف يمكنني مساعدتك؟",
+        sender: "me",
+        senderName: "أنس اورفلي",
+      },
     },
     {
       id: 2,
@@ -5464,6 +5583,28 @@ function loadMessagesForChat(chat) {
       text: "الرقم هو #12345",
       sender: "other",
       senderName: "محمد أحمد علي",
+    },
+    {
+      id: 19,
+      text: "شكراً لك على المساعدة",
+      sender: "other",
+      senderName: "محمد أحمد علي",
+      senderAvatar:
+        "https://ui-avatars.com/api/?name=محمد+أحمد+علي&size=32&background=DBF3FF&color=003E5C",
+      time: "10:50 ص",
+      type: "text",
+      replyTo: {
+        messageId: 1,
+        text: "مرحباً، كيف يمكنني مساعدتك؟",
+        sender: "me",
+        senderName: "أنس اورفلي",
+      },
+    },
+    {
+      id: 5,
+      text: "سأتحقق من الطلبية الآن",
+      sender: "me",
+      senderName: "أنس اورفلي",
       senderAvatar:
         "https://ui-avatars.com/api/?name=محمد+أحمد+علي&size=32&background=DBF3FF&color=003E5C",
       time: "10:35 ص",
@@ -5542,13 +5683,184 @@ function loadMessagesForChat(chat) {
         "https://ui-avatars.com/api/?name=أحمد+محمد&size=64&background=0090D6&color=fff",
       status: "delivered",
     },
+    {
+      id: 11,
+      type: "buttons",
+      sender: "other",
+      senderName: "محمد أحمد علي",
+      senderAvatar:
+        "https://ui-avatars.com/api/?name=محمد+أحمد+علي&size=32&background=DBF3FF&color=003E5C",
+      time: "10:42 ص",
+      text: "اختر أحد الخيارات التالية:",
+      buttons: [
+        { id: "btn1", text: "الخيار الأول", type: "button" },
+        { id: "btn2", text: "الخيار الثاني", type: "button" },
+        { id: "btn3", text: "الخيار الثالث", type: "button" },
+      ],
+    },
+    {
+      id: 12,
+      type: "sticker",
+      sender: "me",
+      senderName: "أنس اورفلي",
+      senderAvatar:
+        "https://ui-avatars.com/api/?name=أنس+اورفلي&size=32&background=0090D6&color=fff",
+      time: "10:43 ص",
+      stickerUrl: "https://raw.githubusercontent.com/WhatsApp/stickers/main/Android/app/src/main/assets/1/01_Cuppy_smile.webp",
+      status: "read",
+    },
+    {
+      id: 13,
+      type: "location",
+      sender: "other",
+      senderName: "محمد أحمد علي",
+      senderAvatar:
+        "https://ui-avatars.com/api/?name=محمد+أحمد+علي&size=32&background=DBF3FF&color=003E5C",
+      time: "10:44 ص",
+      latitude: 24.7136,
+      longitude: 46.6753,
+      mapUrl: "https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/pin-s+E2062D(37.2309846,36.2064064)/37.2309846,36.2064064,15,0,30/640x360@2x?access_token=pk.eyJ1IjoibWF0dGhld21pYW8iLCJhIjoiY204ejVjdm04MDg0bTJubjQ3cjJpYzk3dCJ9.Az7UWLNeqCwPeAYZ61oKbw&logo=false&file.png",
+    },
+    {
+      id: 14,
+      type: "card",
+      sender: "other",
+      senderName: "محمد أحمد علي",
+      senderAvatar:
+        "https://ui-avatars.com/api/?name=محمد+أحمد+علي&size=32&background=DBF3FF&color=003E5C",
+      time: "10:45 ص",
+      cardImage: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400",
+      cardTitle: "عنوان البطاقة الرئيسي",
+      cardText: "هذا نص عادي يصف محتوى البطاقة. يمكن أن يحتوي على معلومات إضافية أو تفاصيل مهمة.",
+      cardFooter: "معلومات إضافية في الفوتر",
+      buttons: [
+        { id: "card-btn1", text: "زر 1", type: "button" },
+        { id: "card-btn2", text: "زر 2", type: "button" },
+        { id: "card-btn3", text: "زر 3", type: "button" },
+      ],
+    },
+    {
+      id: 16,
+      type: "card",
+      sender: "other",
+      senderName: "سارة محمد",
+      senderAvatar:
+        "https://ui-avatars.com/api/?name=سارة+محمد&size=32&background=DBF3FF&color=003E5C",
+      time: "10:47 ص",
+      cardVideo: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+      cardVideoThumbnail: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400",
+      cardTitle: "بطاقة تحتوي على فيديو",
+      cardText: "هذه بطاقة تحتوي على فيديو بدلاً من الصورة. يمكنك الضغط على الفيديو لعرضه.",
+      cardFooter: "فيديو توضيحي",
+      buttons: [
+        { id: "card-video-btn1", text: "مشاهدة", type: "button" },
+        { id: "card-video-btn2", text: "مشاركة", type: "button" },
+        { id: "card-video-btn3", text: "حفظ", type: "button" },
+      ],
+    },
+    {
+      id: 17,
+      type: "card",
+      sender: "other",
+      senderName: "أحمد خالد",
+      senderAvatar:
+        "https://ui-avatars.com/api/?name=أحمد+خالد&size=32&background=DBF3FF&color=003E5C",
+      time: "10:48 ص",
+      cardFile: {
+        url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+        fileName: "ملف_توضيحي.pdf",
+        fileSize: "2.5 MB",
+        fileType: "pdf",
+      },
+      cardTitle: "بطاقة تحتوي على ملف",
+      cardText: "هذه بطاقة تحتوي على ملف بدلاً من الصورة. يمكنك تحميل الملف من خلال الأزرار.",
+      cardFooter: "مستند PDF",
+      buttons: [
+        { id: "card-file-btn1", text: "تحميل", type: "button" },
+        { id: "card-file-btn2", text: "معاينة", type: "button" },
+        { id: "card-file-btn3", text: "مشاركة", type: "button" },
+      ],
+    },
+    {
+      id: 18,
+      type: "card",
+      sender: "other",
+      senderName: "فاطمة علي",
+      senderAvatar:
+        "https://ui-avatars.com/api/?name=فاطمة+علي&size=32&background=DBF3FF&color=003E5C",
+      time: "10:49 ص",
+      cardLocation: {
+        latitude: "24.7136",
+        longitude: "46.6753",
+        mapUrl: "https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/pin-s+E2062D(37.2309846,36.2064064)/37.2309846,36.2064064,15,0,30/640x360@2x?access_token=pk.eyJ1IjoibWF0dGhld21pYW8iLCJhIjoiY204ejVjdm04MDg0bTJubjQ3cjJpYzk3dCJ9.Az7UWLNeqCwPeAYZ61oKbw&logo=false&file.png",
+      },
+      cardTitle: "بطاقة تحتوي على موقع",
+      cardText: "هذه بطاقة تحتوي على موقع على الخريطة. يمكنك فتح الموقع في خرائط جوجل.",
+      cardFooter: "موقع على الخريطة",
+      buttons: [
+        { id: "card-location-btn1", text: "فتح الخريطة", type: "button" },
+        { id: "card-location-btn2", text: "الاتجاهات", type: "button" },
+        { id: "card-location-btn3", text: "مشاركة", type: "button" },
+      ],
+    },
+    {
+      id: 15,
+      type: "list",
+      sender: "other",
+      senderName: "محمد أحمد علي",
+      senderAvatar:
+        "https://ui-avatars.com/api/?name=محمد+أحمد+علي&size=32&background=DBF3FF&color=003E5C",
+      time: "10:46 ص",
+      listTitle: "عنوان القائمة",
+      listText: "اختر من القائمة التالية:",
+      listFooter: "انقر على الزر لفتح القائمة",
+      buttonText: "عرض الخيارات",
+      listItems: [
+        { id: "item1", title: "الخيار الأول", description: "وصف الخيار الأول" },
+        { id: "item2", title: "الخيار الثاني", description: "وصف الخيار الثاني" },
+        { id: "item3", title: "الخيار الثالث", description: "وصف الخيار الثالث" },
+        { id: "item4", title: "الخيار الرابع", description: "وصف الخيار الرابع" },
+        { id: "item5", title: "الخيار الخامس", description: "وصف الخيار الخامس" },
+        { id: "item6", title: "الخيار السادس", description: "وصف الخيار السادس" },
+        { id: "item7", title: "الخيار السابع", description: "وصف الخيار السابع" },
+        { id: "item8", title: "الخيار الثامن", description: "وصف الخيار الثامن" },
+        { id: "item9", title: "الخيار التاسع", description: "وصف الخيار التاسع" },
+        { id: "item10", title: "الخيار العاشر", description: "وصف الخيار العاشر" },
+      ],
+    },
   ];
+
+  // Store messages in global variable
+  if (!window.currentChatMessages) {
+    window.currentChatMessages = [];
+  }
+  window.currentChatMessages = messages;
 
   // Update messages content
   if (messagesContent) {
-    const lang = document.documentElement.getAttribute("lang") || "ar";
-    messagesContent.innerHTML = messages
-      .map((message, index) => {
+    renderMessages(messages, messagesContent);
+  }
+
+  // Ensure message input is visible (already shown above, but double-check)
+  if (messageInputContainer) {
+    messageInputContainer.classList.remove("hidden");
+    // Also ensure display is not set to none
+    messageInputContainer.style.display = "";
+  }
+
+  // Setup message tabs
+  if (typeof setupMessageTabs === "function") {
+    setupMessageTabs();
+  }
+}
+
+// Function to render messages
+function renderMessages(messages, messagesContent) {
+  if (!messagesContent || !messages) return;
+  
+  const lang = document.documentElement.getAttribute("lang") || "ar";
+  const messagesHTML = messages
+    .map((message, index) => {
         const isLastMessage = index === messages.length - 1;
         const isMe = message.sender === "me";
         const messageAlign = isMe ? "justify-end" : "justify-start";
@@ -5698,11 +6010,25 @@ function loadMessagesForChat(chat) {
             </div>
           `;
           return `
-            <div class="flex ${messageAlign} items-start gap-2 ${isLastMessage ? "" : "mb-4"} min-w-0 group">
+            <div class="flex ${messageAlign} items-start gap-2 ${isLastMessage ? "" : "mb-4"} min-w-0 group" data-message-id="${message.id}">
               ${!isMe ? avatarHtml : ""}
-              <div class="max-w-[70%] min-w-0 ${messageBg} rounded-lg px-4 py-2 relative" ${messageBgColor} style="word-break: break-word; overflow-wrap: break-word;">
-                <p class="text-sm break-words">${message.text || ""}</p>
-                <div class="flex items-center justify-between mt-1">
+              <div class="max-w-[85%] sm:max-w-[75%] md:max-w-[65%] lg:max-w-[60%] min-w-0 ${messageBg} rounded-lg relative" ${messageBgColor} style="word-break: break-word; overflow-wrap: break-word; overflow: visible;">
+                ${message.replyTo ? `
+                  <div class="mb-2 px-3 pt-2 pb-1 border-s-2 ${isMe ? "border-blue-500" : "border-slate-400 dark:border-slate-500"} bg-slate-50 dark:bg-slate-800/50 rounded cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors duration-150 reply-preview" data-reply-to-id="${message.replyTo.messageId || ""}">
+                    <div class="flex items-center gap-1.5 mb-0.5">
+                      <span class="text-xs font-medium ${isMe ? "text-blue-600 dark:text-blue-400" : "text-slate-600 dark:text-slate-400"}">
+                        ${message.replyTo.senderName || (message.replyTo.sender === "me" ? "أنت" : "مستخدم")}
+                      </span>
+                    </div>
+                    <p class="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 truncate">
+                      ${message.replyTo.text || ""}
+                    </p>
+                  </div>
+                ` : ""}
+                <div class="px-4 ${message.replyTo ? "pt-2" : "pt-3"}">
+                  <p class="text-sm break-words">${message.text || ""}</p>
+                </div>
+                <div class="px-4 pb-2 flex items-center justify-between">
                   <div class="flex items-center gap-1.5">
                     ${getMessageStatusIcon(message.status)}
                     <span class="text-xs ${timeColor}">${message.time}</span>
@@ -5816,10 +6142,26 @@ function loadMessagesForChat(chat) {
               </div>
             </div>
           `;
+
+          // Reply preview HTML for image messages
+          const replyPreviewHtml = message.replyTo ? `
+            <div class="mb-2 px-3 pt-2 pb-1 border-s-2 ${isMe ? "border-blue-500" : "border-slate-400 dark:border-slate-500"} bg-slate-50 dark:bg-slate-800/50 rounded cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors duration-150 reply-preview" data-reply-to-id="${message.replyTo.messageId || ""}">
+              <div class="flex items-center gap-1.5 mb-0.5">
+                <span class="text-xs font-medium ${isMe ? "text-blue-600 dark:text-blue-400" : "text-slate-600 dark:text-slate-400"}">
+                  ${message.replyTo.senderName || (message.replyTo.sender === "me" ? "أنت" : "مستخدم")}
+                </span>
+              </div>
+              <p class="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 truncate">
+                ${message.replyTo.text || ""}
+              </p>
+            </div>
+          ` : "";
+
           return `
-            <div class="flex ${messageAlign} items-start gap-2 ${isLastMessage ? "" : "mb-4"} min-w-0 group">
+            <div class="flex ${messageAlign} items-start gap-2 ${isLastMessage ? "" : "mb-4"} min-w-0 group" data-message-id="${message.id}">
               ${!isMe ? avatarHtml : ""}
-              <div class="max-w-[70%] min-w-0 ${messageBg} rounded-lg relative" ${messageBgColor} style="overflow: visible;">
+              <div class="max-w-[300px] min-w-[300px] ${messageBg} rounded-lg relative" ${messageBgColor} style="overflow: visible;">
+                ${replyPreviewHtml}
                 <div class="relative overflow-hidden rounded-lg p-1.5">
                   <img
                     src="${message.url}"
@@ -5850,6 +6192,20 @@ function loadMessagesForChat(chat) {
 
         // Video message
         if (message.type === "video") {
+          // Reply preview HTML for video messages
+          const replyPreviewHtml = message.replyTo ? `
+            <div class="mb-2 px-3 pt-2 pb-1 border-s-2 ${isMe ? "border-blue-500" : "border-slate-400 dark:border-slate-500"} bg-slate-50 dark:bg-slate-800/50 rounded cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors duration-150 reply-preview" data-reply-to-id="${message.replyTo.messageId || ""}">
+              <div class="flex items-center gap-1.5 mb-0.5">
+                <span class="text-xs font-medium ${isMe ? "text-blue-600 dark:text-blue-400" : "text-slate-600 dark:text-slate-400"}">
+                  ${message.replyTo.senderName || (message.replyTo.sender === "me" ? "أنت" : "مستخدم")}
+                </span>
+              </div>
+              <p class="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 truncate">
+                ${message.replyTo.text || ""}
+              </p>
+            </div>
+          ` : "";
+
           const avatarHtml = `
             <div class="message-avatar-container flex-shrink-0 relative" style="width: 24px; height: 24px;">
               <img
@@ -5950,12 +6306,13 @@ function loadMessagesForChat(chat) {
             </div>
           `;
           return `
-            <div class="flex ${messageAlign} items-start gap-2 ${isLastMessage ? "" : "mb-4"} min-w-0 group">
+            <div class="flex ${messageAlign} items-start gap-2 ${isLastMessage ? "" : "mb-4"} min-w-0 group" data-message-id="${message.id}">
               ${!isMe ? avatarHtml : ""}
-              <div class="max-w-[70%] min-w-0 ${messageBg} rounded-lg relative" ${messageBgColor} style="overflow: visible;">
+              <div class="max-w-[300px] min-w-[300px] ${messageBg} rounded-lg relative" ${messageBgColor} style="overflow: visible;">
+                ${replyPreviewHtml}
                 <div class="relative overflow-hidden rounded-lg p-1.5">
                   <video
-                    class="w-full h-auto max-h-80 object-contain rounded"
+                    class="w-full h-auto max-h-64 sm:max-h-72 md:max-h-80 object-contain rounded"
                     poster="${message.thumbnail || ""}"
                     controls
                     preload="metadata"
@@ -6082,20 +6439,38 @@ function loadMessagesForChat(chat) {
               </div>
             </div>
           `;
+
+          // Reply preview HTML for audio messages
+          const replyPreviewHtml = message.replyTo ? `
+            <div class="mb-2 px-3 pt-2 pb-1 border-s-2 ${isMe ? "border-blue-500" : "border-slate-400 dark:border-slate-500"} bg-slate-50 dark:bg-slate-800/50 rounded cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors duration-150 reply-preview" data-reply-to-id="${message.replyTo.messageId || ""}">
+              <div class="flex items-center gap-1.5 mb-0.5">
+                <span class="text-xs font-medium ${isMe ? "text-blue-600 dark:text-blue-400" : "text-slate-600 dark:text-slate-400"}">
+                  ${message.replyTo.senderName || (message.replyTo.sender === "me" ? "أنت" : "مستخدم")}
+                </span>
+              </div>
+              <p class="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 truncate">
+                ${message.replyTo.text || ""}
+              </p>
+            </div>
+          ` : "";
+
           return `
-            <div class="flex ${messageAlign} items-start gap-2 ${isLastMessage ? "" : "mb-4"} group">
+            <div class="flex ${messageAlign} items-start gap-2 ${isLastMessage ? "" : "mb-4"} group" data-message-id="${message.id}">
               ${!isMe ? avatarHtml : ""}
-              <div class="max-w-[70%] ${messageBg} rounded-lg px-4 py-3 relative" ${messageBgColor}>
-                <div class="flex items-center gap-3">
-                  <audio
-                    class="flex-1"
-                    controls
-                    preload="metadata"
-                  >
-                    <source src="${message.url}" type="audio/mpeg" />
-                  </audio>
+              <div class="max-w-[300px] min-w-[300px] ${messageBg} rounded-lg relative" ${messageBgColor} style="overflow: visible;">
+                ${replyPreviewHtml}
+                <div class="px-4 ${message.replyTo ? "pt-2" : "pt-3"}">
+                  <div class="flex items-center gap-3">
+                    <audio
+                      class="flex-1"
+                      controls
+                      preload="metadata"
+                    >
+                      <source src="${message.url}" type="audio/mpeg" />
+                    </audio>
+                  </div>
                 </div>
-                <div class="flex items-center justify-between mt-2">
+                <div class="px-4 pb-2 flex items-center justify-between">
                   <div class="flex items-center gap-1.5">
                     ${getMessageStatusIcon(message.status)}
                     <span class="text-xs ${timeColor}">${message.time}</span>
@@ -6110,8 +6485,22 @@ function loadMessagesForChat(chat) {
 
         // File message
         if (message.type === "file") {
+          // Reply preview HTML for file messages
+          const replyPreviewHtml = message.replyTo ? `
+            <div class="mb-2 px-3 pt-2 pb-1 border-s-2 ${isMe ? "border-blue-500" : "border-slate-400 dark:border-slate-500"} bg-slate-50 dark:bg-slate-800/50 rounded cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors duration-150 reply-preview" data-reply-to-id="${message.replyTo.messageId || ""}">
+              <div class="flex items-center gap-1.5 mb-0.5">
+                <span class="text-xs font-medium ${isMe ? "text-blue-600 dark:text-blue-400" : "text-slate-600 dark:text-slate-400"}">
+                  ${message.replyTo.senderName || (message.replyTo.sender === "me" ? "أنت" : "مستخدم")}
+                </span>
+              </div>
+              <p class="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 truncate">
+                ${message.replyTo.text || ""}
+              </p>
+            </div>
+          ` : "";
+
           const fileIcons = {
-            pdf: "hgi-file-pdf",
+            pdf: "hgi-file-01",
             doc: "hgi-file-doc",
             docx: "hgi-file-doc",
             xls: "hgi-file-xls",
@@ -6223,37 +6612,44 @@ function loadMessagesForChat(chat) {
             </div>
           `;
           return `
-            <div class="flex ${messageAlign} items-start gap-2 ${isLastMessage ? "" : "mb-4"} min-w-0 group">
+            <div class="flex ${messageAlign} items-start gap-2 ${isLastMessage ? "" : "mb-4"} min-w-0 group" data-message-id="${message.id}">
               ${!isMe ? avatarHtml : ""}
-              <div class="max-w-[70%] min-w-0 ${messageBg} rounded-lg px-4 py-3 relative" ${messageBgColor}>
-                <div class="flex items-center gap-3">
-                  <div class="w-12 h-12 flex items-center justify-center rounded-lg bg-slate-200 dark:bg-slate-600 flex-shrink-0">
-                    <i class="hgi-stroke ${fileIcon} text-2xl ${
+              <div class="max-w-[300px] min-w-[300px] ${messageBg} rounded-lg relative" ${messageBgColor} style="overflow: visible;">
+                ${replyPreviewHtml}
+                <div class="relative overflow-visible rounded-lg p-1.5">
+                  <div class="flex items-center gap-3 p-3 rounded-lg ${
+                    isMe 
+                      ? "bg-white/10 dark:bg-white/10" 
+                      : "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600"
+                  }">
+                    <div class="w-12 h-12 flex items-center justify-center rounded-lg bg-slate-200 dark:bg-slate-600 flex-shrink-0">
+                      <i class="hgi-stroke ${fileIcon} text-2xl ${
             isMe ? "text-slate-900" : "text-slate-700 dark:text-slate-300"
           }"></i>
-                  </div>
-                  <div class="flex-1 min-w-0">
-                    <p class="text-sm font-medium truncate">${
-                      message.fileName || "file"
-                    }</p>
-                    <p class="text-xs ${timeColor} mt-0.5">${
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <p class="text-sm font-medium truncate">${
+                        message.fileName || "file"
+                      }</p>
+                      <p class="text-xs ${timeColor} mt-0.5">${
             message.fileSize || ""
           }</p>
+                    </div>
+                    <button
+                      class="message-download-btn w-8 h-8 flex items-center justify-center rounded hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors duration-150 flex-shrink-0"
+                      data-url="${message.url || "#"}"
+                      data-file-name="${message.fileName || "file"}"
+                      data-title-ar="تحميل"
+                      data-title-en="Download"
+                      type="button"
+                    >
+                      <i class="hgi-stroke hgi-download-01 text-lg ${
+                        isMe ? "text-white" : "text-slate-600 dark:text-slate-400"
+                      }"></i>
+                    </button>
                   </div>
-                  <button
-                    class="message-download-btn w-8 h-8 flex items-center justify-center rounded hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors duration-150 flex-shrink-0"
-                    data-url="${message.url || "#"}"
-                    data-file-name="${message.fileName || "file"}"
-                    data-title-ar="تحميل"
-                    data-title-en="Download"
-                    type="button"
-                  >
-                    <i class="hgi-stroke hgi-download-01 text-lg ${
-                      isMe ? "text-white" : "text-slate-600 dark:text-slate-400"
-                    }"></i>
-                  </button>
                 </div>
-                <div class="flex items-center justify-between mt-2">
+                <div class="px-4 pb-2 flex items-center justify-between">
                   <div class="flex items-center gap-1.5">
                     ${getMessageStatusIcon(message.status)}
                     <span class="text-xs ${timeColor}">${message.time}</span>
@@ -6372,7 +6768,7 @@ function loadMessagesForChat(chat) {
           return `
             <div class="flex ${messageAlign} items-start gap-2 ${isLastMessage ? "" : "mb-4"} min-w-0 group">
               ${!isMe ? avatarHtml : ""}
-              <div class="max-w-[70%] min-w-0 ${messageBg} rounded-lg relative" ${messageBgColor} style="overflow: visible;">
+              <div class="max-w-[300px] min-w-[300px] ${messageBg} rounded-lg relative" ${messageBgColor} style="overflow: visible;">
                 <div class="relative overflow-visible rounded-lg p-1.5">
                   <div class="flex items-center gap-3 p-3 rounded-lg ${
                     isMe 
@@ -6424,40 +6820,899 @@ function loadMessagesForChat(chat) {
           `;
         }
 
+        // Message with buttons
+        if (message.type === "buttons") {
+          const avatarHtml = `
+            <div class="message-avatar-container flex-shrink-0 relative" style="width: 24px; height: 24px;">
+              <img
+                src="${
+                  message.senderAvatar ||
+                  `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                    message.senderName || "User"
+                  )}&size=24&background=${isMe ? "0090D6" : "DBF3FF"}&color=${
+                    isMe ? "fff" : "003E5C"
+                  }`
+                }"
+                alt="${message.senderName || ""}"
+                class="w-full h-full rounded-full object-cover cursor-pointer"
+                onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(
+                  message.senderName || "User"
+                )}&size=24&background=${isMe ? "0090D6" : "DBF3FF"}&color=${
+            isMe ? "fff" : "003E5C"
+          }'"
+                data-sender-name="${message.senderName || ""}"
+              />
+              <div class="message-avatar-tooltip absolute top-1/2 -translate-y-1/2 ${
+                isMe ? "left-full ms-2" : "right-full me-2"
+              } bg-slate-900 dark:bg-slate-700 text-white dark:text-slate-100 px-2 py-1 rounded-md text-xs whitespace-nowrap opacity-0 pointer-events-none transition-opacity duration-150 z-[100] shadow-lg">
+                <span class="tooltip-text">${message.senderName || ""}</span>
+                <div class="absolute top-1/2 -translate-y-1/2 ${
+                  isMe ? "left-0 -translate-x-full" : "right-0 translate-x-full"
+                } border-[4px] border-transparent ${
+            isMe
+              ? "border-l-slate-900 dark:border-l-slate-700"
+              : "border-r-slate-900 dark:border-r-slate-700"
+          }"></div>
+              </div>
+            </div>
+          `;
+
+          const messageActionsHtml = `
+            <div class="message-actions-container relative">
+              <button
+                class="message-actions-btn w-6 h-6 flex items-center justify-center rounded hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors duration-150 opacity-0 group-hover:opacity-100"
+                data-message-id="${message.id}"
+                type="button"
+              >
+                <i class="hgi-stroke hgi-more-vertical text-sm ${
+                  isMe
+                    ? "text-white opacity-70"
+                    : "text-slate-600 dark:text-slate-400"
+                }"></i>
+              </button>
+              <div
+                class="message-actions-menu absolute ${
+                  isMe ? "left-full ms-2" : "right-full me-2"
+                } top-0 w-36 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 opacity-0 invisible translate-y-[-10px] transition-all duration-200 z-[100]"
+                data-message-id="${message.id}"
+              >
+                <div class="py-1">
+                  <button
+                    class="message-action-btn w-full px-3 py-1.5 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-start flex items-center gap-2 rounded"
+                    data-action="reply"
+                    data-message-id="${message.id}"
+                    data-text-ar="رد"
+                    data-text-en="Reply"
+                  >
+                    <i class="hgi-stroke hgi-arrow-move-up-left text-sm" style="color: #0090d6"></i>
+                    <span>رد</span>
+                  </button>
+                  <button
+                    class="message-action-btn w-full px-3 py-1.5 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-start flex items-center gap-2 rounded"
+                    data-action="copy"
+                    data-message-id="${message.id}"
+                    data-text-ar="نسخ"
+                    data-text-en="Copy"
+                  >
+                    <i class="hgi-stroke hgi-copy-01 text-sm" style="color: #0090d6"></i>
+                    <span>نسخ</span>
+                  </button>
+                  <button
+                    class="message-action-btn w-full px-3 py-1.5 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-start flex items-center gap-2 rounded"
+                    data-action="react"
+                    data-message-id="${message.id}"
+                    data-text-ar="تفاعل"
+                    data-text-en="React"
+                  >
+                    <i class="hgi-stroke hgi-smile text-sm" style="color: #0090d6"></i>
+                    <span>تفاعل</span>
+                  </button>
+                  <div class="h-px bg-slate-200 dark:bg-slate-700 my-1"></div>
+                  <button
+                    class="message-action-btn w-full px-3 py-1.5 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 text-start flex items-center gap-2 rounded"
+                    data-action="delete"
+                    data-message-id="${message.id}"
+                    data-text-ar="حذف"
+                    data-text-en="Delete"
+                  >
+                    <i class="hgi-stroke hgi-delete-02 text-sm"></i>
+                    <span>حذف</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          `;
+
+          return `
+            <div class="group flex items-start gap-2 ${messageAlign} ${isLastMessage ? "" : "mb-4"}" data-message-id="${message.id}">
+              ${!isMe ? avatarHtml : ""}
+              <div class="flex flex-col max-w-[300px] min-w-[300px] ${
+                isMe ? "items-end" : "items-start"
+              }" style="overflow: visible;">
+                <div class="rounded-lg w-full ${messageBg}" ${messageBgColor} style="overflow: visible;">
+                  <div class="px-4 pt-3">
+                    <p class="text-sm mb-3 ${
+                      isMe ? "text-white" : "text-slate-900 dark:text-slate-100"
+                    }">${message.text || ""}</p>
+                    <div class="flex flex-col gap-2">
+                      ${(message.buttons || [])
+                        .map(
+                          (btn) => `
+                        <button
+                          class="message-button-btn w-full px-4 py-2.5 rounded-lg text-sm font-medium transition-colors duration-150 ${
+                            isMe
+                              ? "bg-white/20 hover:bg-white/30 text-white border border-white/30"
+                              : "bg-slate-100 dark:bg-slate-600 hover:bg-slate-200 dark:hover:bg-slate-500 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-500"
+                          }"
+                          data-button-id="${btn.id}"
+                          data-message-id="${message.id}"
+                          type="button"
+                        >
+                          ${btn.text}
+                        </button>
+                      `
+                        )
+                        .join("")}
+                    </div>
+                  </div>
+                  <div class="px-4 pb-2 flex items-center justify-between">
+                    <div class="flex items-center gap-1.5">
+                      ${getMessageStatusIcon(message.status)}
+                      <span class="text-xs ${timeColor}">${message.time}</span>
+                    </div>
+                    ${messageActionsHtml}
+                  </div>
+                </div>
+              </div>
+              ${isMe ? avatarHtml : ""}
+            </div>
+          `;
+        }
+
+        // Sticker message
+        if (message.type === "sticker") {
+          const avatarHtml = `
+            <div class="message-avatar-container flex-shrink-0 relative" style="width: 24px; height: 24px;">
+              <img
+                src="${
+                  message.senderAvatar ||
+                  `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                    message.senderName || "User"
+                  )}&size=24&background=${isMe ? "0090D6" : "DBF3FF"}&color=${
+                    isMe ? "fff" : "003E5C"
+                  }`
+                }"
+                alt="${message.senderName || ""}"
+                class="w-full h-full rounded-full object-cover cursor-pointer"
+                onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(
+                  message.senderName || "User"
+                )}&size=24&background=${isMe ? "0090D6" : "DBF3FF"}&color=${
+            isMe ? "fff" : "003E5C"
+          }'"
+                data-sender-name="${message.senderName || ""}"
+              />
+              <div class="message-avatar-tooltip absolute top-1/2 -translate-y-1/2 ${
+                isMe ? "left-full ms-2" : "right-full me-2"
+              } bg-slate-900 dark:bg-slate-700 text-white dark:text-slate-100 px-2 py-1 rounded-md text-xs whitespace-nowrap opacity-0 pointer-events-none transition-opacity duration-150 z-[100] shadow-lg">
+                <span class="tooltip-text">${message.senderName || ""}</span>
+                <div class="absolute top-1/2 -translate-y-1/2 ${
+                  isMe ? "left-0 -translate-x-full" : "right-0 translate-x-full"
+                } border-[4px] border-transparent ${
+            isMe
+              ? "border-l-slate-900 dark:border-l-slate-700"
+              : "border-r-slate-900 dark:border-r-slate-700"
+          }"></div>
+              </div>
+            </div>
+          `;
+
+          const messageActionsHtml = `
+            <div class="message-actions-container relative">
+              <button
+                class="message-actions-btn w-6 h-6 flex items-center justify-center rounded hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors duration-150 opacity-0 group-hover:opacity-100"
+                data-message-id="${message.id}"
+                type="button"
+              >
+                <i class="hgi-stroke hgi-more-vertical text-sm ${
+                  isMe
+                    ? "text-white opacity-70"
+                    : "text-slate-600 dark:text-slate-400"
+                }"></i>
+              </button>
+              <div
+                class="message-actions-menu absolute ${
+                  isMe ? "left-full ms-2" : "right-full me-2"
+                } top-0 w-36 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 opacity-0 invisible translate-y-[-10px] transition-all duration-200 z-[100]"
+                data-message-id="${message.id}"
+              >
+                <div class="py-1">
+                  <button
+                    class="message-action-btn w-full px-3 py-1.5 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-start flex items-center gap-2 rounded"
+                    data-action="reply"
+                    data-message-id="${message.id}"
+                    data-text-ar="رد"
+                    data-text-en="Reply"
+                  >
+                    <i class="hgi-stroke hgi-arrow-move-up-left text-sm" style="color: #0090d6"></i>
+                    <span>رد</span>
+                  </button>
+                  <button
+                    class="message-action-btn w-full px-3 py-1.5 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-start flex items-center gap-2 rounded"
+                    data-action="copy"
+                    data-message-id="${message.id}"
+                    data-text-ar="نسخ"
+                    data-text-en="Copy"
+                  >
+                    <i class="hgi-stroke hgi-copy-01 text-sm" style="color: #0090d6"></i>
+                    <span>نسخ</span>
+                  </button>
+                  <button
+                    class="message-action-btn w-full px-3 py-1.5 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-start flex items-center gap-2 rounded"
+                    data-action="react"
+                    data-message-id="${message.id}"
+                    data-text-ar="تفاعل"
+                    data-text-en="React"
+                  >
+                    <i class="hgi-stroke hgi-smile text-sm" style="color: #0090d6"></i>
+                    <span>تفاعل</span>
+                  </button>
+                  <div class="h-px bg-slate-200 dark:bg-slate-700 my-1"></div>
+                  <button
+                    class="message-action-btn w-full px-3 py-1.5 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 text-start flex items-center gap-2 rounded"
+                    data-action="delete"
+                    data-message-id="${message.id}"
+                    data-text-ar="حذف"
+                    data-text-en="Delete"
+                  >
+                    <i class="hgi-stroke hgi-delete-02 text-sm"></i>
+                    <span>حذف</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          `;
+
+          return `
+            <div class="group flex items-start gap-2 ${messageAlign} ${isLastMessage ? "" : "mb-4"}" data-message-id="${message.id}">
+              ${!isMe ? avatarHtml : ""}
+              <div class="flex flex-col max-w-fit ${
+                isMe ? "items-end" : "items-start"
+              }" style="overflow: visible;">
+                <div class="rounded-lg ${messageBg}" ${messageBgColor} style="overflow: visible;">
+                  <div class="rounded-lg overflow-hidden">
+                    <div class="flex items-center justify-center p-2">
+                      <img
+                        src="${message.stickerUrl || "https://via.placeholder.com/200x200"}"
+                        alt="Sticker"
+                        class="w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 object-contain"
+                        style="max-width: 200px; max-height: 200px;"
+                      />
+                    </div>
+                  </div>
+                  <div class="px-4 pb-2 flex items-center justify-between">
+                    <div class="flex items-center gap-1.5">
+                      ${getMessageStatusIcon(message.status)}
+                      <span class="text-xs ${timeColor}">${message.time}</span>
+                    </div>
+                    ${messageActionsHtml}
+                  </div>
+                </div>
+              </div>
+              ${isMe ? avatarHtml : ""}
+            </div>
+          `;
+        }
+
+        // Location message
+        if (message.type === "location") {
+          const avatarHtml = `
+            <div class="message-avatar-container flex-shrink-0 relative" style="width: 24px; height: 24px;">
+              <img
+                src="${
+                  message.senderAvatar ||
+                  `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                    message.senderName || "User"
+                  )}&size=24&background=${isMe ? "0090D6" : "DBF3FF"}&color=${
+                    isMe ? "fff" : "003E5C"
+                  }`
+                }"
+                alt="${message.senderName || ""}"
+                class="w-full h-full rounded-full object-cover cursor-pointer"
+                onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(
+                  message.senderName || "User"
+                )}&size=24&background=${isMe ? "0090D6" : "DBF3FF"}&color=${
+            isMe ? "fff" : "003E5C"
+          }'"
+                data-sender-name="${message.senderName || ""}"
+              />
+              <div class="message-avatar-tooltip absolute top-1/2 -translate-y-1/2 ${
+                isMe ? "left-full ms-2" : "right-full me-2"
+              } bg-slate-900 dark:bg-slate-700 text-white dark:text-slate-100 px-2 py-1 rounded-md text-xs whitespace-nowrap opacity-0 pointer-events-none transition-opacity duration-150 z-[100] shadow-lg">
+                <span class="tooltip-text">${message.senderName || ""}</span>
+                <div class="absolute top-1/2 -translate-y-1/2 ${
+                  isMe ? "left-0 -translate-x-full" : "right-0 translate-x-full"
+                } border-[4px] border-transparent ${
+            isMe
+              ? "border-l-slate-900 dark:border-l-slate-700"
+              : "border-r-slate-900 dark:border-r-slate-700"
+          }"></div>
+              </div>
+            </div>
+          `;
+
+          const messageActionsHtml = `
+            <div class="message-actions-container relative">
+              <button
+                class="message-actions-btn w-6 h-6 flex items-center justify-center rounded hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors duration-150 opacity-0 group-hover:opacity-100"
+                data-message-id="${message.id}"
+                type="button"
+              >
+                <i class="hgi-stroke hgi-more-vertical text-sm ${
+                  isMe
+                    ? "text-white opacity-70"
+                    : "text-slate-600 dark:text-slate-400"
+                }"></i>
+              </button>
+              <div
+                class="message-actions-menu absolute ${
+                  isMe ? "left-full ms-2" : "right-full me-2"
+                } top-0 w-36 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 opacity-0 invisible translate-y-[-10px] transition-all duration-200 z-[100]"
+                data-message-id="${message.id}"
+              >
+                <div class="py-1">
+                  <button
+                    class="message-action-btn w-full px-3 py-1.5 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-start flex items-center gap-2 rounded"
+                    data-action="reply"
+                    data-message-id="${message.id}"
+                    data-text-ar="رد"
+                    data-text-en="Reply"
+                  >
+                    <i class="hgi-stroke hgi-arrow-move-up-left text-sm" style="color: #0090d6"></i>
+                    <span>رد</span>
+                  </button>
+                  <button
+                    class="message-action-btn w-full px-3 py-1.5 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-start flex items-center gap-2 rounded"
+                    data-action="copy"
+                    data-message-id="${message.id}"
+                    data-text-ar="نسخ"
+                    data-text-en="Copy"
+                  >
+                    <i class="hgi-stroke hgi-copy-01 text-sm" style="color: #0090d6"></i>
+                    <span>نسخ</span>
+                  </button>
+                  <button
+                    class="message-action-btn w-full px-3 py-1.5 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-start flex items-center gap-2 rounded"
+                    data-action="react"
+                    data-message-id="${message.id}"
+                    data-text-ar="تفاعل"
+                    data-text-en="React"
+                  >
+                    <i class="hgi-stroke hgi-smile text-sm" style="color: #0090d6"></i>
+                    <span>تفاعل</span>
+                  </button>
+                  <div class="h-px bg-slate-200 dark:bg-slate-700 my-1"></div>
+                  <button
+                    class="message-action-btn w-full px-3 py-1.5 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 text-start flex items-center gap-2 rounded"
+                    data-action="delete"
+                    data-message-id="${message.id}"
+                    data-text-ar="حذف"
+                    data-text-en="Delete"
+                  >
+                    <i class="hgi-stroke hgi-delete-02 text-sm"></i>
+                    <span>حذف</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          `;
+
+          return `
+            <div class="group flex items-start gap-2 ${messageAlign} ${isLastMessage ? "" : "mb-4"}" data-message-id="${message.id}">
+              ${!isMe ? avatarHtml : ""}
+              <div class="flex flex-col max-w-[300px] min-w-[300px] ${
+                isMe ? "items-end" : "items-start"
+              }" style="overflow: visible;">
+                <div class="rounded-lg w-full ${messageBg}" ${messageBgColor} style="overflow: visible;">
+                  <div class="relative overflow-hidden rounded-lg p-1.5">
+                    <img
+                      src="${message.mapUrl || "https://via.placeholder.com/400x200/0090D6/FFFFFF?text=Map"}"
+                      alt="Location"
+                      class="w-full h-32 sm:h-36 md:h-40 object-cover rounded"
+                      data-latitude="${message.latitude || ""}"
+                      data-longitude="${message.longitude || ""}"
+                    />
+                  </div>
+                  <div class="px-4 pb-2 flex items-center justify-between">
+                    <div class="flex items-center gap-1.5">
+                      ${getMessageStatusIcon(message.status)}
+                      <span class="text-xs ${timeColor}">${message.time}</span>
+                    </div>
+                    ${messageActionsHtml}
+                  </div>
+                </div>
+              </div>
+              ${isMe ? avatarHtml : ""}
+            </div>
+          `;
+        }
+
+        // Card message
+        if (message.type === "card") {
+          const avatarHtml = `
+            <div class="message-avatar-container flex-shrink-0 relative" style="width: 24px; height: 24px;">
+              <img
+                src="${
+                  message.senderAvatar ||
+                  `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                    message.senderName || "User"
+                  )}&size=24&background=${isMe ? "0090D6" : "DBF3FF"}&color=${
+                    isMe ? "fff" : "003E5C"
+                  }`
+                }"
+                alt="${message.senderName || ""}"
+                class="w-full h-full rounded-full object-cover cursor-pointer"
+                onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(
+                  message.senderName || "User"
+                )}&size=24&background=${isMe ? "0090D6" : "DBF3FF"}&color=${
+            isMe ? "fff" : "003E5C"
+          }'"
+                data-sender-name="${message.senderName || ""}"
+              />
+              <div class="message-avatar-tooltip absolute top-1/2 -translate-y-1/2 ${
+                isMe ? "left-full ms-2" : "right-full me-2"
+              } bg-slate-900 dark:bg-slate-700 text-white dark:text-slate-100 px-2 py-1 rounded-md text-xs whitespace-nowrap opacity-0 pointer-events-none transition-opacity duration-150 z-[100] shadow-lg">
+                <span class="tooltip-text">${message.senderName || ""}</span>
+                <div class="absolute top-1/2 -translate-y-1/2 ${
+                  isMe ? "left-0 -translate-x-full" : "right-0 translate-x-full"
+                } border-[4px] border-transparent ${
+            isMe
+              ? "border-l-slate-900 dark:border-l-slate-700"
+              : "border-r-slate-900 dark:border-r-slate-700"
+          }"></div>
+              </div>
+            </div>
+          `;
+
+          const messageActionsHtml = `
+            <div class="message-actions-container relative">
+              <button
+                class="message-actions-btn w-6 h-6 flex items-center justify-center rounded hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors duration-150 opacity-0 group-hover:opacity-100"
+                data-message-id="${message.id}"
+                type="button"
+              >
+                <i class="hgi-stroke hgi-more-vertical text-sm ${
+                  isMe
+                    ? "text-white opacity-70"
+                    : "text-slate-600 dark:text-slate-400"
+                }"></i>
+              </button>
+              <div
+                class="message-actions-menu absolute ${
+                  isMe ? "left-full ms-2" : "right-full me-2"
+                } top-0 w-36 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 opacity-0 invisible translate-y-[-10px] transition-all duration-200 z-[100]"
+                data-message-id="${message.id}"
+              >
+                <div class="py-1">
+                  <button
+                    class="message-action-btn w-full px-3 py-1.5 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-start flex items-center gap-2 rounded"
+                    data-action="reply"
+                    data-message-id="${message.id}"
+                    data-text-ar="رد"
+                    data-text-en="Reply"
+                  >
+                    <i class="hgi-stroke hgi-arrow-move-up-left text-sm" style="color: #0090d6"></i>
+                    <span>رد</span>
+                  </button>
+                  <button
+                    class="message-action-btn w-full px-3 py-1.5 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-start flex items-center gap-2 rounded"
+                    data-action="copy"
+                    data-message-id="${message.id}"
+                    data-text-ar="نسخ"
+                    data-text-en="Copy"
+                  >
+                    <i class="hgi-stroke hgi-copy-01 text-sm" style="color: #0090d6"></i>
+                    <span>نسخ</span>
+                  </button>
+                  <button
+                    class="message-action-btn w-full px-3 py-1.5 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-start flex items-center gap-2 rounded"
+                    data-action="react"
+                    data-message-id="${message.id}"
+                    data-text-ar="تفاعل"
+                    data-text-en="React"
+                  >
+                    <i class="hgi-stroke hgi-smile text-sm" style="color: #0090d6"></i>
+                    <span>تفاعل</span>
+                  </button>
+                  <div class="h-px bg-slate-200 dark:bg-slate-700 my-1"></div>
+                  <button
+                    class="message-action-btn w-full px-3 py-1.5 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 text-start flex items-center gap-2 rounded"
+                    data-action="delete"
+                    data-message-id="${message.id}"
+                    data-text-ar="حذف"
+                    data-text-en="Delete"
+                  >
+                    <i class="hgi-stroke hgi-delete-02 text-sm"></i>
+                    <span>حذف</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          `;
+
+          return `
+            <div class="group flex items-start gap-2 ${messageAlign} ${isLastMessage ? "" : "mb-4"}" data-message-id="${message.id}">
+              ${!isMe ? avatarHtml : ""}
+              <div class="flex flex-col max-w-[300px] min-w-[300px] ${
+                isMe ? "items-end" : "items-start"
+              }" style="overflow: visible;">
+                <div class="rounded-lg ${messageBg}" ${messageBgColor} style="overflow: visible;">
+                  ${
+                    message.cardVideo
+                      ? `
+                      <div class="relative overflow-hidden rounded-lg p-1.5">
+                        <video
+                          class="w-full h-auto max-h-64 sm:max-h-72 md:max-h-80 object-contain rounded"
+                          controls
+                          preload="metadata"
+                        >
+                          <source src="${message.cardVideo}" type="video/mp4" />
+                        </video>
+                      </div>
+                    `
+                      : message.cardFile
+                      ? `
+                      <div class="relative overflow-visible rounded-lg p-1.5">
+                        <div class="flex items-center gap-3 p-3 rounded-lg ${
+                          isMe 
+                            ? "bg-white/10 dark:bg-white/10" 
+                            : "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600"
+                        }">
+                          <div class="w-12 h-12 flex items-center justify-center rounded-lg bg-slate-200 dark:bg-slate-600 flex-shrink-0">
+                            <i class="hgi-stroke ${
+                              (() => {
+                                const fileIcons = {
+                                  pdf: "hgi-file-01",
+                                  doc: "hgi-file-doc",
+                                  docx: "hgi-file-doc",
+                                  xls: "hgi-file-xls",
+                                  xlsx: "hgi-file-xls",
+                                  txt: "hgi-file-01",
+                                  zip: "hgi-file-zip",
+                                  default: "hgi-file-01",
+                                };
+                                const fileExt = message.cardFile.fileType || "default";
+                                return fileIcons[fileExt] || fileIcons.default;
+                              })()
+                            } text-2xl ${
+                              isMe ? "text-slate-900" : "text-slate-700 dark:text-slate-300"
+                            }"></i>
+                          </div>
+                          <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium truncate">${
+                              message.cardFile.fileName || "file"
+                            }</p>
+                            <p class="text-xs ${timeColor} mt-0.5">${
+                              message.cardFile.fileSize || ""
+                            }</p>
+                          </div>
+                          <button
+                            class="message-download-btn w-8 h-8 flex items-center justify-center rounded hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors duration-150 flex-shrink-0"
+                            data-url="${message.cardFile.url || "#"}"
+                            data-file-name="${message.cardFile.fileName || "file"}"
+                            data-title-ar="تحميل"
+                            data-title-en="Download"
+                            type="button"
+                          >
+                            <i class="hgi-stroke hgi-download-01 text-lg ${
+                              isMe ? "text-white" : "text-slate-600 dark:text-slate-400"
+                            }"></i>
+                          </button>
+                        </div>
+                      </div>
+                    `
+                      : message.cardLocation
+                      ? `
+                      <div class="relative overflow-hidden rounded-lg p-1.5">
+                        <img
+                          src="${message.cardLocation.mapUrl || "https://via.placeholder.com/400x200/0090D6/FFFFFF?text=Map"}"
+                          alt="Location"
+                          class="w-full h-32 sm:h-36 md:h-40 object-cover rounded"
+                          data-latitude="${message.cardLocation.latitude || ""}"
+                          data-longitude="${message.cardLocation.longitude || ""}"
+                          style="display: block;"
+                          onerror="this.src='https://via.placeholder.com/400x200/0090D6/FFFFFF?text=Map'"
+                        />
+                      </div>
+                    `
+                      : `
+                      <div class="relative overflow-hidden rounded-lg p-1.5">
+                        <img
+                          src="${message.cardImage || "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400"}"
+                          alt="Card"
+                          class="w-full h-auto max-h-48 object-cover cursor-pointer media-preview-trigger rounded"
+                          data-media-type="image"
+                          data-media-url="${message.cardImage || "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400"}"
+                          style="display: block;"
+                          onerror="this.src='https://via.placeholder.com/400x200?text=Image+Error'"
+                        />
+                      </div>
+                    `
+                  }
+                  <div class="px-4 py-3">
+                    <h3 class="text-sm font-semibold mb-2 ${
+                      isMe ? "text-white" : "text-slate-900 dark:text-slate-100"
+                    }">${message.cardTitle || ""}</h3>
+                    <p class="text-sm mb-3 ${
+                      isMe ? "text-white opacity-90" : "text-slate-700 dark:text-slate-300"
+                    }">${message.cardText || ""}</p>
+                    <div class="border-t ${
+                      isMe ? "border-white/20" : "border-slate-200 dark:border-slate-600"
+                    } pt-3 mb-3">
+                      <p class="text-xs ${
+                        isMe ? "text-white opacity-70" : "text-slate-500 dark:text-slate-400"
+                      }">${message.cardFooter || ""}</p>
+                    </div>
+                    <div class="flex flex-col gap-2">
+                      ${(message.buttons || [])
+                        .map(
+                          (btn) => `
+                        <button
+                          class="message-button-btn w-full px-4 py-2.5 rounded-lg text-sm font-medium transition-colors duration-150 ${
+                            isMe
+                              ? "bg-white/20 hover:bg-white/30 text-white border border-white/30"
+                              : "bg-slate-100 dark:bg-slate-600 hover:bg-slate-200 dark:hover:bg-slate-500 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-500"
+                          }"
+                          data-button-id="${btn.id}"
+                          data-message-id="${message.id}"
+                          type="button"
+                        >
+                          ${btn.text}
+                        </button>
+                      `
+                        )
+                        .join("")}
+                    </div>
+                  </div>
+                  <div class="px-4 pb-2 flex items-center justify-between">
+                    <div class="flex items-center gap-1.5">
+                      ${getMessageStatusIcon(message.status)}
+                      <span class="text-xs ${timeColor}">${message.time}</span>
+                    </div>
+                    ${messageActionsHtml}
+                  </div>
+                </div>
+              </div>
+              ${isMe ? avatarHtml : ""}
+            </div>
+          `;
+        }
+
+        // List message
+        if (message.type === "list") {
+          const avatarHtml = `
+            <div class="message-avatar-container flex-shrink-0 relative" style="width: 24px; height: 24px;">
+              <img
+                src="${
+                  message.senderAvatar ||
+                  `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                    message.senderName || "User"
+                  )}&size=24&background=${isMe ? "0090D6" : "DBF3FF"}&color=${
+                    isMe ? "fff" : "003E5C"
+                  }`
+                }"
+                alt="${message.senderName || ""}"
+                class="w-full h-full rounded-full object-cover cursor-pointer"
+                onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(
+                  message.senderName || "User"
+                )}&size=24&background=${isMe ? "0090D6" : "DBF3FF"}&color=${
+            isMe ? "fff" : "003E5C"
+          }'"
+                data-sender-name="${message.senderName || ""}"
+              />
+              <div class="message-avatar-tooltip absolute top-1/2 -translate-y-1/2 ${
+                isMe ? "left-full ms-2" : "right-full me-2"
+              } bg-slate-900 dark:bg-slate-700 text-white dark:text-slate-100 px-2 py-1 rounded-md text-xs whitespace-nowrap opacity-0 pointer-events-none transition-opacity duration-150 z-[100] shadow-lg">
+                <span class="tooltip-text">${message.senderName || ""}</span>
+                <div class="absolute top-1/2 -translate-y-1/2 ${
+                  isMe ? "left-0 -translate-x-full" : "right-0 translate-x-full"
+                } border-[4px] border-transparent ${
+            isMe
+              ? "border-l-slate-900 dark:border-l-slate-700"
+              : "border-r-slate-900 dark:border-r-slate-700"
+          }"></div>
+              </div>
+            </div>
+          `;
+
+          const messageActionsHtml = `
+            <div class="message-actions-container relative">
+              <button
+                class="message-actions-btn w-6 h-6 flex items-center justify-center rounded hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors duration-150 opacity-0 group-hover:opacity-100"
+                data-message-id="${message.id}"
+                type="button"
+              >
+                <i class="hgi-stroke hgi-more-vertical text-sm ${
+                  isMe
+                    ? "text-white opacity-70"
+                    : "text-slate-600 dark:text-slate-400"
+                }"></i>
+              </button>
+              <div
+                class="message-actions-menu absolute ${
+                  isMe ? "left-full ms-2" : "right-full me-2"
+                } top-0 w-36 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 opacity-0 invisible translate-y-[-10px] transition-all duration-200 z-[100]"
+                data-message-id="${message.id}"
+              >
+                <div class="py-1">
+                  <button
+                    class="message-action-btn w-full px-3 py-1.5 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-start flex items-center gap-2 rounded"
+                    data-action="reply"
+                    data-message-id="${message.id}"
+                    data-text-ar="رد"
+                    data-text-en="Reply"
+                  >
+                    <i class="hgi-stroke hgi-arrow-move-up-left text-sm" style="color: #0090d6"></i>
+                    <span>رد</span>
+                  </button>
+                  <button
+                    class="message-action-btn w-full px-3 py-1.5 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-start flex items-center gap-2 rounded"
+                    data-action="copy"
+                    data-message-id="${message.id}"
+                    data-text-ar="نسخ"
+                    data-text-en="Copy"
+                  >
+                    <i class="hgi-stroke hgi-copy-01 text-sm" style="color: #0090d6"></i>
+                    <span>نسخ</span>
+                  </button>
+                  <button
+                    class="message-action-btn w-full px-3 py-1.5 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-start flex items-center gap-2 rounded"
+                    data-action="react"
+                    data-message-id="${message.id}"
+                    data-text-ar="تفاعل"
+                    data-text-en="React"
+                  >
+                    <i class="hgi-stroke hgi-smile text-sm" style="color: #0090d6"></i>
+                    <span>تفاعل</span>
+                  </button>
+                  <div class="h-px bg-slate-200 dark:bg-slate-700 my-1"></div>
+                  <button
+                    class="message-action-btn w-full px-3 py-1.5 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 text-start flex items-center gap-2 rounded"
+                    data-action="delete"
+                    data-message-id="${message.id}"
+                    data-text-ar="حذف"
+                    data-text-en="Delete"
+                  >
+                    <i class="hgi-stroke hgi-delete-02 text-sm"></i>
+                    <span>حذف</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          `;
+
+          return `
+            <div class="group flex items-start gap-2 ${messageAlign} ${isLastMessage ? "" : "mb-4"}" data-message-id="${message.id}">
+              ${!isMe ? avatarHtml : ""}
+              <div class="flex flex-col max-w-[300px] min-w-[300px] ${
+                isMe ? "items-end" : "items-start"
+              }" style="overflow: visible;">
+                <div class="rounded-lg w-full px-4 py-3 ${messageBg}" ${messageBgColor} style="overflow: visible;">
+                  <h3 class="text-sm font-semibold mb-2 ${
+                    isMe ? "text-white" : "text-slate-900 dark:text-slate-100"
+                  }">${message.listTitle || ""}</h3>
+                  <p class="text-sm mb-3 ${
+                    isMe ? "text-white opacity-90" : "text-slate-700 dark:text-slate-300"
+                  }">${message.listText || ""}</p>
+                  <div class="border-t ${
+                    isMe ? "border-white/20" : "border-slate-200 dark:border-slate-600"
+                  } pt-3 mb-3">
+                    <p class="text-xs ${
+                      isMe ? "text-white opacity-70" : "text-slate-500 dark:text-slate-400"
+                    }">${message.listFooter || ""}</p>
+                  </div>
+                  <button
+                    class="message-list-btn w-full px-4 py-2.5 rounded-lg text-sm font-medium transition-colors duration-150 ${
+                      isMe
+                        ? "bg-white/20 hover:bg-white/30 text-white border border-white/30"
+                        : "bg-slate-100 dark:bg-slate-600 hover:bg-slate-200 dark:hover:bg-slate-500 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-500"
+                    }"
+                    data-message-id="${message.id}"
+                    data-list-id="list-${message.id}"
+                    type="button"
+                  >
+                    ${message.buttonText || "عرض الخيارات"}
+                  </button>
+                  <div
+                    id="list-${message.id}"
+                    class="message-list-menu hidden mt-2 rounded-lg overflow-hidden border ${
+                      isMe
+                        ? "border-white/30 bg-white/10"
+                        : "border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800"
+                    }"
+                  >
+                    <div class="max-h-64 overflow-y-auto">
+                      ${(message.listItems || [])
+                        .map(
+                          (item, idx) => `
+                        <button
+                          class="message-list-item w-full px-4 py-3 text-start border-b ${
+                            isMe
+                              ? "border-white/20 hover:bg-white/10 text-white"
+                              : "border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100"
+                          } ${
+                            idx === (message.listItems || []).length - 1 ? "border-b-0" : ""
+                          } transition-colors duration-150"
+                          data-item-id="${item.id}"
+                          data-message-id="${message.id}"
+                          type="button"
+                        >
+                          <p class="text-sm font-medium">${item.title || ""}</p>
+                        </button>
+                      `
+                        )
+                        .join("")}
+                    </div>
+                  </div>
+                  <div class="px-4 pb-2 flex items-center justify-between">
+                    <div class="flex items-center gap-1.5">
+                      ${getMessageStatusIcon(message.status)}
+                      <span class="text-xs ${timeColor}">${message.time}</span>
+                    </div>
+                    ${messageActionsHtml}
+                  </div>
+                </div>
+              </div>
+              ${isMe ? avatarHtml : ""}
+            </div>
+          `;
+        }
+
         return "";
       })
       .join("");
 
-    // Setup message controls
+  // Set innerHTML after generating all HTML
+  messagesContent.innerHTML = messagesHTML;
+
+  // Setup message controls
+  if (typeof setupMessageControls === "function") {
     setupMessageControls();
+  }
 
-    // Set default position for last message menu (bottom-0)
-    const allMessages = messagesContent.querySelectorAll(".group");
-    if (allMessages.length > 0) {
-      const lastMessage = allMessages[allMessages.length - 1];
-      const lastMessageMenu = lastMessage.querySelector(".message-actions-menu");
-      if (lastMessageMenu) {
-        // Set default position to bottom-0 for last message
-        lastMessageMenu.classList.remove("top-0");
-        lastMessageMenu.classList.add("bottom-0");
-        lastMessageMenu.style.top = "";
-        lastMessageMenu.style.bottom = "0";
-        // Update translate-y for bottom position
-        lastMessageMenu.classList.remove("translate-y-[-10px]");
-        lastMessageMenu.classList.add("translate-y-[10px]");
-      }
+  // Set default position for last message menu (bottom-0)
+  const allMessages = messagesContent.querySelectorAll(".group");
+  if (allMessages.length > 0) {
+    const lastMessage = allMessages[allMessages.length - 1];
+    const lastMessageMenu = lastMessage.querySelector(".message-actions-menu");
+    if (lastMessageMenu) {
+      // Set default position to bottom-0 for last message
+      lastMessageMenu.classList.remove("top-0");
+      lastMessageMenu.classList.add("bottom-0");
+      lastMessageMenu.style.top = "";
+      lastMessageMenu.style.bottom = "0";
+      // Update translate-y for bottom position
+      lastMessageMenu.classList.remove("translate-y-[-10px]");
+      lastMessageMenu.classList.add("translate-y-[10px]");
     }
+  }
 
-    // Setup media preview
+  // Setup media preview
+  if (typeof setupMediaPreview === "function") {
     setupMediaPreview();
+  }
 
-    // Setup avatar tooltips
+  // Setup avatar tooltips
+  if (typeof setupAvatarTooltips === "function") {
     setupAvatarTooltips();
+  }
 
-    // Setup status tooltips
+  // Setup status tooltips
+  if (typeof setupStatusTooltips === "function") {
     setupStatusTooltips();
+  }
 
-    // Update message reactions for all messages
+  // Update message reactions for all messages
+  if (typeof messageReactions !== "undefined" && typeof updateMessageReactions === "function") {
     messages.forEach((message) => {
       if (messageReactions[message.id]) {
         updateMessageReactions(message.id);
@@ -6465,13 +7720,76 @@ function loadMessagesForChat(chat) {
     });
   }
 
-  // Show message input
-  if (messageInputContainer) {
-    messageInputContainer.classList.remove("hidden");
+  // Setup reply preview click handlers
+  setupReplyPreviewHandlers();
+}
+
+// Function to setup reply preview click handlers
+function setupReplyPreviewHandlers() {
+  const messagesContent = document.getElementById("messages-content");
+  if (!messagesContent) return;
+
+  // Remove existing listeners to avoid duplicates
+  const existingPreviews = messagesContent.querySelectorAll(".reply-preview");
+  existingPreviews.forEach((preview) => {
+    const newPreview = preview.cloneNode(true);
+    preview.parentNode.replaceChild(newPreview, preview);
+  });
+
+  // Add click listeners to all reply previews
+  const replyPreviews = messagesContent.querySelectorAll(".reply-preview");
+  replyPreviews.forEach((preview) => {
+    preview.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const replyToId = preview.getAttribute("data-reply-to-id");
+      if (replyToId) {
+        scrollToRepliedMessage(replyToId);
+      }
+    });
+  });
+}
+
+// Function to scroll to replied message
+function scrollToRepliedMessage(messageId) {
+  const messagesContent = document.getElementById("messages-content");
+  if (!messagesContent) return;
+
+  // Find the message element
+  const targetMessage = messagesContent.querySelector(`[data-message-id="${messageId}"]`);
+  if (!targetMessage) return;
+
+  // Remove previous highlight
+  const previousHighlight = messagesContent.querySelector(".message-highlight");
+  if (previousHighlight) {
+    previousHighlight.classList.remove("message-highlight");
+    previousHighlight.style.transition = "";
+    previousHighlight.style.boxShadow = "";
   }
 
-  // Setup message tabs
-  setupMessageTabs();
+  // Add highlight class
+  targetMessage.classList.add("message-highlight");
+  targetMessage.style.transition = "box-shadow 0.3s ease-in-out";
+  targetMessage.style.boxShadow = "0 0 0 3px rgba(0, 144, 214, 0.5)";
+
+  // Scroll to message
+  const containerRect = messagesContent.getBoundingClientRect();
+  const messageRect = targetMessage.getBoundingClientRect();
+  const scrollTop = messagesContent.scrollTop;
+  const messageTop = messageRect.top - containerRect.top + scrollTop;
+
+  messagesContent.scrollTo({
+    top: messageTop - 20, // Add some padding
+    behavior: "smooth",
+  });
+
+  // Remove highlight after 2 seconds
+  setTimeout(() => {
+    if (targetMessage.classList.contains("message-highlight")) {
+      targetMessage.classList.remove("message-highlight");
+      targetMessage.style.transition = "";
+      targetMessage.style.boxShadow = "";
+    }
+  }, 2000);
 }
 
 // Function to setup message controls (download and actions)
@@ -6611,7 +7929,7 @@ function setupMessageControls() {
       } else if (action === "copy") {
         handleCopy(messageId);
       } else if (action === "react") {
-        handleReact(messageId, btn);
+        handleReact(messageId, btn, e);
       } else if (action === "delete") {
         console.log("Delete message", messageId);
         // TODO: Implement delete functionality
@@ -6757,6 +8075,66 @@ function setupMessageControls() {
       attributes: true,
       attributeFilter: ["lang"],
     });
+  });
+
+  // Setup message buttons (for buttons message type)
+  const messageButtonButtons = messagesContent.querySelectorAll(".message-button-btn");
+  messageButtonButtons.forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const buttonId = btn.getAttribute("data-button-id");
+      const messageId = btn.getAttribute("data-message-id");
+      console.log("Button clicked:", buttonId, "in message:", messageId);
+      // TODO: Handle button click action
+    });
+  });
+
+  // Setup list message buttons (for list message type)
+  const messageListButtons = messagesContent.querySelectorAll(".message-list-btn");
+  messageListButtons.forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const listId = btn.getAttribute("data-list-id");
+      const messageId = btn.getAttribute("data-message-id");
+      const listMenu = document.getElementById(listId);
+      
+      if (listMenu) {
+        const isHidden = listMenu.classList.contains("hidden");
+        if (isHidden) {
+          listMenu.classList.remove("hidden");
+        } else {
+          listMenu.classList.add("hidden");
+        }
+      }
+    });
+  });
+
+  // Setup list item buttons (for list message type)
+  const messageListItemButtons = messagesContent.querySelectorAll(".message-list-item");
+  messageListItemButtons.forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const itemId = btn.getAttribute("data-item-id");
+      const messageId = btn.getAttribute("data-message-id");
+      console.log("List item clicked:", itemId, "in message:", messageId);
+      // TODO: Handle list item click action
+      
+      // Close the list menu after selection
+      const listMenu = btn.closest(".message-list-menu");
+      if (listMenu) {
+        listMenu.classList.add("hidden");
+      }
+    });
+  });
+
+  // Close list menus when clicking outside
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest(".message-list-btn") && !e.target.closest(".message-list-menu")) {
+      const allListMenus = messagesContent.querySelectorAll(".message-list-menu");
+      allListMenus.forEach((menu) => {
+        menu.classList.add("hidden");
+      });
+    }
   });
 }
 
@@ -7153,13 +8531,22 @@ function updateMessageReactions(messageId) {
   reactionsContainer.innerHTML = "";
   const reactionSpan = document.createElement("span");
   reactionSpan.className =
-    "inline-flex items-center justify-center text-base w-6 h-6 rounded-full bg-white dark:bg-slate-800 shadow-md border border-slate-200 dark:border-slate-700";
+    "inline-flex items-center justify-center text-base w-6 h-6 rounded-full bg-white dark:bg-slate-800 shadow-md border border-slate-200 dark:border-slate-700 cursor-pointer hover:scale-110 transition-transform duration-150";
   reactionSpan.textContent = reaction;
+  reactionSpan.title = "اضغط لإزالة التفاعل";
+  // Add click handler to remove reaction
+  reactionSpan.addEventListener("click", (e) => {
+    e.stopPropagation();
+    // Remove reaction
+    delete messageReactions[messageId];
+    // Update display (will remove the container)
+    updateMessageReactions(messageId);
+  });
   reactionsContainer.appendChild(reactionSpan);
 }
 
 // Function to show full emoji picker
-function showFullEmojiPicker(messageId, button) {
+function showFullEmojiPicker(messageId, button, clickEvent = null) {
   // Check if full emoji picker already exists
   let fullEmojiPicker = document.getElementById("full-emoji-picker");
   if (fullEmojiPicker) {
@@ -7178,9 +8565,29 @@ function showFullEmojiPicker(messageId, button) {
   emojiPicker.style.width = "320px";
   emojiPicker.style.height = "400px";
   
+  // Close picker function (defined before event handlers)
+  const closePicker = () => {
+    if (pickerContainer && pickerContainer.parentNode) {
+      pickerContainer.remove();
+    }
+    // Remove all event listeners
+    document.removeEventListener("mousedown", handleOutsideClick, true);
+    document.removeEventListener("click", handleOutsideClick, false);
+    document.removeEventListener("keydown", handleEscape);
+  };
+
   // Handle emoji selection
   emojiPicker.addEventListener("emoji-click", (e) => {
-    const emoji = e.detail.unicode;
+    e.stopPropagation(); // Prevent event from bubbling
+    
+    // Get emoji from event
+    const emoji = e.detail.unicode || e.detail.emoji?.unicode || e.detail.emoji;
+    
+    if (!emoji) {
+      console.warn("No emoji found in event detail");
+      return;
+    }
+    
     // Add reaction to message - only one emoji per message
     const currentReaction = messageReactions[messageId];
     if (currentReaction === emoji) {
@@ -7190,22 +8597,40 @@ function showFullEmojiPicker(messageId, button) {
       // Replace with new emoji (or add if none exists)
       messageReactions[messageId] = emoji;
     }
+    
     // Update message reactions display
     updateMessageReactions(messageId);
-    pickerContainer.remove();
+    
+    // Close picker after selection
+    closePicker();
   });
 
   pickerContainer.appendChild(emojiPicker);
 
-  // Position picker relative to button within messages-content container
+  // Position picker relative to click position within messages-content container
   const messagesContent = document.getElementById("messages-content");
   if (messagesContent) {
     messagesContent.appendChild(pickerContainer);
     messagesContent.style.position = "relative";
 
-    // Get button and container positions
-    const buttonRect = button.getBoundingClientRect();
     const containerRect = messagesContent.getBoundingClientRect();
+    const scrollTop = messagesContent.scrollTop;
+    const scrollLeft = messagesContent.scrollLeft;
+
+    // Get click position or button position as fallback
+    let clickX, clickY;
+    if (clickEvent) {
+      clickX = clickEvent.clientX;
+      clickY = clickEvent.clientY;
+    } else {
+      const buttonRect = button.getBoundingClientRect();
+      clickX = buttonRect.left + buttonRect.width / 2;
+      clickY = buttonRect.top + buttonRect.height / 2;
+    }
+
+    // Calculate click position relative to container's content (accounting for scroll)
+    const clickXRelative = clickX - containerRect.left + scrollLeft;
+    const clickYRelative = clickY - containerRect.top + scrollTop;
 
     // Force layout calculation
     pickerContainer.style.visibility = "hidden";
@@ -7214,76 +8639,84 @@ function showFullEmojiPicker(messageId, button) {
     pickerContainer.style.visibility = "visible";
 
     const lang = document.documentElement.getAttribute("lang") || "ar";
+    const padding = 8; // Padding from container edges
+    const containerWidth = messagesContent.clientWidth || containerRect.width;
+    const containerHeight = messagesContent.scrollHeight;
+    const viewportHeight = messagesContent.clientHeight;
 
-    // Calculate position relative to container
-    const buttonCenterX = buttonRect.left + buttonRect.width / 2;
+    // Calculate horizontal position - center picker on click position
     const pickerCenterX = pickerRect.width / 2;
-    const pickerTop =
-      buttonRect.top - containerRect.top - pickerRect.height - 4;
-
-    // Calculate horizontal position
     let pickerLeft, pickerRight;
+    
     if (lang === "ar") {
-      const rightOffset = containerRect.right - buttonCenterX - pickerCenterX;
+      // For RTL: position picker centered on click from right
+      const clickXFromRight = containerWidth - (clickX - containerRect.left);
+      const rightOffset = clickXFromRight - pickerCenterX;
       pickerRight = rightOffset;
       pickerLeft = "auto";
-    } else {
-      const leftOffset = buttonCenterX - containerRect.left - pickerCenterX;
-      pickerLeft = leftOffset;
-      pickerRight = "auto";
-    }
-
-    // Check boundaries and adjust if needed
-    const padding = 8; // Padding from container edges
-
-    if (lang === "ar") {
-      // Check right boundary
+      
+      // Check boundaries
       if (pickerRight < padding) {
         pickerRight = padding;
       }
-      // Check left boundary (if picker extends beyond container)
-      const pickerLeftPos =
-        containerRect.width - pickerRight - pickerRect.width;
+      const pickerLeftPos = containerWidth - pickerRight - pickerRect.width;
       if (pickerLeftPos < padding) {
-        pickerRight = containerRect.width - pickerRect.width - padding;
+        pickerRight = containerWidth - pickerRect.width - padding;
       }
       pickerContainer.style.right = `${pickerRight}px`;
       pickerContainer.style.left = "auto";
     } else {
-      // Check left boundary
+      // For LTR: position picker centered on click from left
+      const clickXFromLeft = clickX - containerRect.left;
+      pickerLeft = clickXFromLeft - pickerCenterX;
+      pickerRight = "auto";
+      
+      // Check boundaries
       if (pickerLeft < padding) {
         pickerLeft = padding;
       }
-      // Check right boundary (if picker extends beyond container)
-      if (pickerLeft + pickerRect.width > containerRect.width - padding) {
-        pickerLeft = containerRect.width - pickerRect.width - padding;
+      if (pickerLeft + pickerRect.width > containerWidth - padding) {
+        pickerLeft = containerWidth - pickerRect.width - padding;
       }
       pickerContainer.style.left = `${pickerLeft}px`;
       pickerContainer.style.right = "auto";
     }
 
-    // Check top boundary - if picker would go above container, show below button
-    if (pickerTop < padding) {
-      pickerContainer.style.top = `${
-        buttonRect.bottom - containerRect.top + 4
-      }px`;
+    // Calculate vertical position - try above click first
+    const pickerTopAbove = clickYRelative - pickerRect.height - 8;
+    const pickerTopBelow = clickYRelative + 8;
+
+    // Check if there's enough space above the click
+    if (pickerTopAbove >= padding) {
+      // Show above click
+      pickerContainer.style.top = `${pickerTopAbove}px`;
+    } else if (pickerTopBelow + pickerRect.height <= containerHeight - padding) {
+      // Show below click
+      pickerContainer.style.top = `${pickerTopBelow}px`;
     } else {
-      pickerContainer.style.top = `${pickerTop}px`;
+      // If neither works, show at click position (will be partially visible)
+      pickerContainer.style.top = `${clickYRelative}px`;
+      
+      // Try to scroll picker into view if possible
+      const pickerBottom = clickYRelative + pickerRect.height;
+      if (pickerBottom > scrollTop + viewportHeight) {
+        // Picker would be below viewport, scroll to show it
+        messagesContent.scrollTo({
+          top: pickerBottom - viewportHeight + padding,
+          behavior: 'smooth'
+        });
+      } else if (pickerTopAbove < scrollTop) {
+        // Picker would be above viewport, scroll to show it
+        messagesContent.scrollTo({
+          top: Math.max(0, pickerTopAbove - padding),
+          behavior: 'smooth'
+        });
+      }
     }
 
     pickerContainer.style.position = "absolute";
   }
 
-  // Close picker function
-  const closePicker = () => {
-    if (pickerContainer && pickerContainer.parentNode) {
-      pickerContainer.remove();
-    }
-    document.removeEventListener("mousedown", handleOutsideClick, true);
-    document.removeEventListener("click", handleOutsideClick, false);
-    document.removeEventListener("keydown", handleEscape);
-  };
-  
   // Helper function to check if element is inside emoji-picker (including shadow DOM)
   const isInsideEmojiPicker = (element) => {
     if (!element) return false;
@@ -7327,14 +8760,73 @@ function showFullEmojiPicker(messageId, button) {
   
   // Handle clicks outside the picker
   const handleOutsideClick = (e) => {
-    // Get click coordinates
+    // Check if picker still exists
+    if (!pickerContainer || !pickerContainer.parentNode) {
+      return;
+    }
+    
+    const target = e.target;
+    
+    // Check if click is on the button that opened the picker
+    if (button && button.contains(target)) {
+      return;
+    }
+    
+    // Check using composedPath for shadow DOM elements
+    const path = e.composedPath ? e.composedPath() : [];
+    
+    // Check if any element in the path is inside emoji-picker or picker container
+    const isInsidePicker = path.some((element) => {
+      // Check if element is the picker container itself
+      if (element === pickerContainer) {
+        return true;
+      }
+      // Check if element is inside picker container
+      if (pickerContainer.contains(element)) {
+        return true;
+      }
+      // Check if element is emoji-picker (shadow DOM)
+      if (element.tagName === 'EMOJI-PICKER') {
+        return true;
+      }
+      // Check shadow DOM - traverse up to find emoji-picker
+      let current = element;
+      while (current) {
+        if (current === pickerContainer || pickerContainer.contains(current)) {
+          return true;
+        }
+        if (current.tagName === 'EMOJI-PICKER') {
+          return true;
+        }
+        if (current.parentElement) {
+          current = current.parentElement;
+        } else if (current.getRootNode && current.getRootNode().host) {
+          current = current.getRootNode().host;
+        } else {
+          break;
+        }
+      }
+      return false;
+    });
+    
+    if (isInsidePicker) {
+      return;
+    }
+    
+    // Also check if any element in path is inside button
+    const isInsideButton = path.some((element) => {
+      return element && button && button.contains(element);
+    });
+    
+    if (isInsideButton) {
+      return;
+    }
+    
+    // Also check using bounding box as fallback
+    const pickerRect = pickerContainer.getBoundingClientRect();
     const clickX = e.clientX;
     const clickY = e.clientY;
     
-    // Get picker container bounding box
-    const pickerRect = pickerContainer.getBoundingClientRect();
-    
-    // Check if click is inside picker container bounds
     const isInsidePickerBounds = (
       clickX >= pickerRect.left &&
       clickX <= pickerRect.right &&
@@ -7343,33 +8835,6 @@ function showFullEmojiPicker(messageId, button) {
     );
     
     if (isInsidePickerBounds) {
-      return;
-    }
-    
-    // Also check using composedPath for shadow DOM elements
-    const path = e.composedPath ? e.composedPath() : [];
-    const target = e.target;
-    
-    // Check if any element in the path is inside emoji-picker
-    const isInsidePicker = path.some((element) => {
-      return isInsideEmojiPicker(element);
-    });
-    
-    if (isInsidePicker) {
-      return;
-    }
-    
-    // Check if click is on the button that opened the picker
-    if (button.contains(target)) {
-      return;
-    }
-    
-    // Also check if any element in path is inside button
-    const isInsideButton = path.some((element) => {
-      return element && button.contains(element);
-    });
-    
-    if (isInsideButton) {
       return;
     }
     
@@ -7384,30 +8849,44 @@ function showFullEmojiPicker(messageId, button) {
     }
   };
   
-  // Add event listeners
-  // Use click in bubble phase to avoid interfering with emoji-picker interactions
-  // The handleOutsideClick function checks coordinates and composedPath to prevent closing
-  // when clicking inside emoji-picker, without blocking emoji-click events
-  setTimeout(() => {
-    document.addEventListener("click", handleOutsideClick, false);
-    document.addEventListener("keydown", handleEscape);
-  }, 100);
+  // Add event listeners immediately
+  // Use mousedown in capture phase to catch clicks early
+  document.addEventListener("mousedown", handleOutsideClick, true);
+  // Also use click in bubble phase as backup
+  document.addEventListener("click", handleOutsideClick, false);
+  document.addEventListener("keydown", handleEscape);
 }
 
 // Function to handle react
-function handleReact(messageId, button) {
+function handleReact(messageId, button, clickEvent = null) {
   // Create emoji picker menu
   const emojis = ["👍", "❤️", "😂", "😮", "😢", "🙏"];
 
-  // Check if emoji menu already exists
+  // Check if emoji menu already exists - if exists and is for same button, toggle it
   let emojiMenu = document.getElementById("emoji-picker-menu");
   if (emojiMenu) {
-    emojiMenu.remove();
+    const existingButtonId = emojiMenu.getAttribute("data-button-id");
+    const currentButtonId = button.getAttribute("data-message-id") || messageId;
+    
+    // If same button, remove menu (toggle)
+    if (existingButtonId === currentButtonId) {
+      emojiMenu.remove();
+      // Also close full emoji picker if open
+      const fullEmojiPicker = document.getElementById("full-emoji-picker");
+      if (fullEmojiPicker) {
+        fullEmojiPicker.remove();
+      }
+      return;
+    } else {
+      // If different button, remove old menu first
+      emojiMenu.remove();
+    }
   }
 
   // Create emoji menu
   emojiMenu = document.createElement("div");
   emojiMenu.id = "emoji-picker-menu";
+  emojiMenu.setAttribute("data-button-id", button.getAttribute("data-message-id") || messageId);
   emojiMenu.className =
     "absolute bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 p-1.5 z-50 flex items-center gap-1";
   emojiMenu.style.position = "absolute";
@@ -7448,19 +8927,31 @@ function handleReact(messageId, button) {
   moreEmojiBtn.addEventListener("click", (e) => {
     e.stopPropagation();
     emojiMenu.remove();
-    showFullEmojiPicker(messageId, button);
+    // Pass the click event to position the picker at the click location
+    showFullEmojiPicker(messageId, button, e);
   });
   emojiMenu.appendChild(moreEmojiBtn);
 
-  // Position menu relative to button within messages-content container
+  // Position menu relative to button position within messages-content container
   const messagesContent = document.getElementById("messages-content");
   if (messagesContent) {
     messagesContent.appendChild(emojiMenu);
     messagesContent.style.position = "relative";
 
-    // Get button and container positions
+    // Get button position relative to container (accounting for scroll)
     const buttonRect = button.getBoundingClientRect();
     const containerRect = messagesContent.getBoundingClientRect();
+    const scrollTop = messagesContent.scrollTop;
+    const scrollLeft = messagesContent.scrollLeft;
+
+    // Calculate button position relative to container's content (not viewport)
+    // buttonRect.top is relative to viewport, containerRect.top is container's position in viewport
+    // We need button's position relative to container's scroll position
+    const buttonTopRelative = buttonRect.top - containerRect.top + scrollTop;
+    const buttonLeftRelative = buttonRect.left - containerRect.left + scrollLeft;
+    const buttonCenterX = buttonLeftRelative + buttonRect.width / 2;
+    const buttonTop = buttonTopRelative;
+    const buttonBottom = buttonTopRelative + buttonRect.height;
 
     // Force layout calculation
     emojiMenu.style.visibility = "hidden";
@@ -7469,76 +8960,118 @@ function handleReact(messageId, button) {
     emojiMenu.style.visibility = "visible";
 
     const lang = document.documentElement.getAttribute("lang") || "ar";
-
-    // Calculate position relative to container
-    const buttonCenterX = buttonRect.left + buttonRect.width / 2;
     const menuCenterX = menuRect.width / 2;
-    const menuTop = buttonRect.top - containerRect.top - menuRect.height - 4;
-
-    // Calculate horizontal position
-    let menuLeft, menuRight;
-    if (lang === "ar") {
-      const rightOffset = containerRect.right - buttonCenterX - menuCenterX;
-      menuRight = rightOffset;
-      menuLeft = "auto";
-    } else {
-      const leftOffset = buttonCenterX - containerRect.left - menuCenterX;
-      menuLeft = leftOffset;
-      menuRight = "auto";
-    }
-
-    // Check boundaries and adjust if needed
     const padding = 8; // Padding from container edges
 
+    // Calculate horizontal position - center menu on button center
+    // Use container's client width (viewport width) for positioning
+    const containerWidth = messagesContent.clientWidth || containerRect.width;
+    let menuLeft, menuRight;
     if (lang === "ar") {
-      // Check right boundary
+      // For RTL: position menu centered on button from right
+      // Calculate button center position relative to container's right edge
+      const buttonCenterFromRight = containerWidth - (buttonRect.left - containerRect.left) - buttonRect.width / 2;
+      const rightOffset = buttonCenterFromRight - menuCenterX;
+      menuRight = rightOffset;
+      menuLeft = "auto";
+      
+      // Check boundaries
       if (menuRight < padding) {
         menuRight = padding;
       }
-      // Check left boundary (if menu extends beyond container)
-      const menuLeftPos = containerRect.width - menuRight - menuRect.width;
+      const menuLeftPos = containerWidth - menuRight - menuRect.width;
       if (menuLeftPos < padding) {
-        menuRight = containerRect.width - menuRect.width - padding;
+        menuRight = containerWidth - menuRect.width - padding;
       }
       emojiMenu.style.right = `${menuRight}px`;
       emojiMenu.style.left = "auto";
     } else {
-      // Check left boundary
+      // For LTR: position menu centered on button from left
+      const buttonCenterFromLeft = buttonRect.left - containerRect.left + buttonRect.width / 2;
+      menuLeft = buttonCenterFromLeft - menuCenterX;
+      menuRight = "auto";
+      
+      // Check boundaries
       if (menuLeft < padding) {
         menuLeft = padding;
       }
-      // Check right boundary (if menu extends beyond container)
-      if (menuLeft + menuRect.width > containerRect.width - padding) {
-        menuLeft = containerRect.width - menuRect.width - padding;
+      if (menuLeft + menuRect.width > containerWidth - padding) {
+        menuLeft = containerWidth - menuRect.width - padding;
       }
       emojiMenu.style.left = `${menuLeft}px`;
       emojiMenu.style.right = "auto";
     }
 
-    // Check top boundary - if menu would go above container, show below button
-    if (menuTop < padding) {
-      emojiMenu.style.top = `${buttonRect.bottom - containerRect.top + 4}px`;
+    // Calculate vertical position - try above button first
+    const menuTopAbove = buttonTop - menuRect.height - 8;
+    const menuTopBelow = buttonBottom + 8;
+    const containerHeight = messagesContent.scrollHeight;
+    const viewportHeight = messagesContent.clientHeight;
+
+    // Check if there's enough space above the button
+    if (menuTopAbove >= padding) {
+      // Show above button
+      emojiMenu.style.top = `${menuTopAbove}px`;
+    } else if (menuTopBelow + menuRect.height <= containerHeight - padding) {
+      // Show below button
+      emojiMenu.style.top = `${menuTopBelow}px`;
     } else {
-      emojiMenu.style.top = `${menuTop}px`;
+      // If neither works, show at button top (will be partially visible)
+      emojiMenu.style.top = `${buttonTop}px`;
+      
+      // Try to scroll menu into view if possible
+      const menuBottom = buttonTop + menuRect.height;
+      if (menuBottom > scrollTop + viewportHeight) {
+        // Menu would be below viewport, scroll to show it
+        messagesContent.scrollTo({
+          top: menuBottom - viewportHeight + padding,
+          behavior: 'smooth'
+        });
+      } else if (menuTopAbove < scrollTop) {
+        // Menu would be above viewport, scroll to show it
+        messagesContent.scrollTo({
+          top: Math.max(0, menuTopAbove - padding),
+          behavior: 'smooth'
+        });
+      }
     }
 
     emojiMenu.style.position = "absolute";
   }
 
-  // Close menu when clicking outside
+  // Close menu when clicking outside or on another reaction button
   const closeEmojiMenu = (e) => {
-    if (!emojiMenu.contains(e.target) && !button.contains(e.target)) {
-      emojiMenu.remove();
-      // Also close full emoji picker if open
-      const fullEmojiPicker = document.getElementById("full-emoji-picker");
-      if (fullEmojiPicker) {
-        fullEmojiPicker.remove();
-      }
-      document.removeEventListener("click", closeEmojiMenu);
+    // Don't close if clicking inside the menu
+    if (emojiMenu.contains(e.target)) {
+      return;
     }
+    
+    // Don't close if clicking on the same button (toggle behavior)
+    if (button.contains(e.target)) {
+      return;
+    }
+    
+    // Close if clicking on another reaction button
+    const clickedButton = e.target.closest(".message-actions-btn[data-action='react']");
+    if (clickedButton && clickedButton !== button) {
+      emojiMenu.remove();
+      document.removeEventListener("click", closeEmojiMenu);
+      return;
+    }
+    
+    // Close if clicking outside
+    emojiMenu.remove();
+    // Also close full emoji picker if open
+    const fullEmojiPicker = document.getElementById("full-emoji-picker");
+    if (fullEmojiPicker) {
+      fullEmojiPicker.remove();
+    }
+    document.removeEventListener("click", closeEmojiMenu);
   };
+  
+  // Use setTimeout to avoid immediate closure
   setTimeout(() => {
-    document.addEventListener("click", closeEmojiMenu);
+    document.addEventListener("click", closeEmojiMenu, true);
   }, 100);
 }
 
@@ -7858,6 +9391,237 @@ function setupMessageTabs() {
         attributeFilter: ["data-title-ar", "data-title-en"],
       });
     }
+
+    // Setup variables dropdown
+    let isDropdownOpen = false;
+    let variablesDropdown = null;
+
+    const createVariablesDropdown = () => {
+      // Remove existing dropdown if any
+      if (variablesDropdown) {
+        variablesDropdown.remove();
+      }
+
+      // Get variables list
+      const variablesList = document.getElementById("variables-list");
+      if (!variablesList) return;
+
+      // Get all variable items
+      const variableItems = variablesList.querySelectorAll(".variable-item");
+      if (variableItems.length === 0) return;
+
+      // Extract variable names and categorize them
+      const systemFields = [];
+      const customFields = [];
+      
+      Array.from(variableItems).forEach((item) => {
+        const key = item.getAttribute("data-key");
+        const nameSpan = item.querySelector("span.text-xs.font-semibold");
+        const variable = {
+          key: key || "",
+          name: nameSpan ? nameSpan.textContent.trim() : key || "",
+        };
+        
+        // Categorize: System fields are common ones, rest are custom
+        const systemKeys = ["name", "email", "phone", "id", "created_at", "updated_at"];
+        if (systemKeys.includes(variable.key.toLowerCase())) {
+          systemFields.push(variable);
+        } else {
+          customFields.push(variable);
+        }
+      });
+
+      // Create dropdown
+      variablesDropdown = document.createElement("div");
+      variablesDropdown.id = "variables-dropdown";
+      variablesDropdown.className =
+        "absolute w-64 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden z-[1000]";
+      variablesDropdown.style.display = "none";
+      
+      // Position dropdown above the button
+      const isRTL = document.documentElement.getAttribute("dir") === "rtl";
+      
+      variablesDropdown.style.bottom = "100%";
+      variablesDropdown.style.marginBottom = "8px";
+      
+      // Button uses end-4, so in RTL it's on right, in LTR it's on left
+      // Dropdown should align to the same side as the button
+      if (isRTL) {
+        // RTL: button is on right, dropdown should align to right edge
+        variablesDropdown.style.right = "0";
+        variablesDropdown.style.left = "auto";
+      } else {
+        // LTR: button is on left, dropdown should align to left edge  
+        variablesDropdown.style.left = "0";
+        variablesDropdown.style.right = "auto";
+      }
+
+      // Create search box
+      const searchBox = document.createElement("div");
+      searchBox.className = "p-2 border-b border-slate-200 dark:border-slate-700";
+      const searchInput = document.createElement("input");
+      searchInput.type = "text";
+      searchInput.placeholder = isRTL ? "بحث..." : "Search...";
+      searchInput.className =
+        "w-full px-3 py-1.5 text-sm bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent";
+      searchBox.appendChild(searchInput);
+
+      // Create dropdown content
+      const dropdownContent = document.createElement("div");
+      dropdownContent.className = "max-h-80 overflow-y-auto";
+      dropdownContent.id = "variables-dropdown-content";
+
+      // Function to render variables
+      const renderVariables = (searchTerm = "") => {
+        dropdownContent.innerHTML = "";
+        const searchLower = searchTerm.toLowerCase();
+
+        // Filter variables based on search
+        const filteredSystemFields = systemFields.filter(
+          (v) => v.name.toLowerCase().includes(searchLower) || v.key.toLowerCase().includes(searchLower)
+        );
+        const filteredCustomFields = customFields.filter(
+          (v) => v.name.toLowerCase().includes(searchLower) || v.key.toLowerCase().includes(searchLower)
+        );
+
+        // System Fields section
+        if (filteredSystemFields.length > 0) {
+          const systemHeader = document.createElement("div");
+          systemHeader.className =
+            "px-3 py-2 text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-700/50 sticky top-0";
+          systemHeader.textContent = "System Fields";
+          dropdownContent.appendChild(systemHeader);
+
+          filteredSystemFields.forEach((variable) => {
+            const item = createVariableItem(variable);
+            dropdownContent.appendChild(item);
+          });
+        }
+
+        // Custom User Fields section
+        if (filteredCustomFields.length > 0) {
+          const customHeader = document.createElement("div");
+          customHeader.className =
+            "px-3 py-2 text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-700/50 sticky top-0";
+          customHeader.textContent = "Custom User Fields";
+          dropdownContent.appendChild(customHeader);
+
+          filteredCustomFields.forEach((variable) => {
+            const item = createVariableItem(variable);
+            dropdownContent.appendChild(item);
+          });
+        }
+
+        // No results message
+        if (filteredSystemFields.length === 0 && filteredCustomFields.length === 0) {
+          const noResults = document.createElement("div");
+          noResults.className =
+            "px-3 py-4 text-sm text-center text-slate-500 dark:text-slate-400";
+          noResults.textContent = isRTL ? "لا توجد نتائج" : "No results";
+          dropdownContent.appendChild(noResults);
+        }
+      };
+
+      // Function to create variable item
+      const createVariableItem = (variable) => {
+        const item = document.createElement("button");
+        item.type = "button";
+        item.className =
+          "w-full px-3 py-2 text-sm text-left text-slate-900 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors duration-150";
+        item.textContent = variable.name;
+        item.dataset.variableKey = variable.key;
+
+        item.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const messageInput = document.getElementById("message-input");
+          if (messageInput) {
+            const cursorPos = messageInput.selectionStart || messageInput.value.length;
+            const textBefore = messageInput.value.substring(0, cursorPos);
+            const textAfter = messageInput.value.substring(cursorPos);
+            messageInput.value = textBefore + `{{${variable.key}}}` + textAfter;
+            messageInput.focus();
+            messageInput.setSelectionRange(
+              cursorPos + variable.key.length + 4,
+              cursorPos + variable.key.length + 4
+            );
+          }
+          closeDropdown();
+        });
+
+        return item;
+      };
+
+      // Initial render
+      renderVariables();
+
+      // Search functionality
+      searchInput.addEventListener("input", (e) => {
+        renderVariables(e.target.value);
+      });
+
+      // Prevent dropdown from closing when clicking on search
+      searchInput.addEventListener("click", (e) => {
+        e.stopPropagation();
+      });
+
+      variablesDropdown.appendChild(searchBox);
+      variablesDropdown.appendChild(dropdownContent);
+      
+      // Ensure parent has relative positioning
+      const buttonParent = addVariableBtn.parentElement;
+      if (buttonParent) {
+        buttonParent.style.position = "relative";
+        buttonParent.appendChild(variablesDropdown);
+      }
+    };
+
+    const openDropdown = () => {
+      if (!variablesDropdown) {
+        createVariablesDropdown();
+      }
+      if (variablesDropdown) {
+        // Update position based on current RTL/LTR state
+        const isRTL = document.documentElement.getAttribute("dir") === "rtl";
+        if (isRTL) {
+          variablesDropdown.style.right = "auto";
+          variablesDropdown.style.left = "0";
+        } else {
+          variablesDropdown.style.left = "auto";
+          variablesDropdown.style.right = "0";
+        }
+        variablesDropdown.style.display = "block";
+        isDropdownOpen = true;
+      }
+    };
+
+    const closeDropdown = () => {
+      if (variablesDropdown) {
+        variablesDropdown.style.display = "none";
+        isDropdownOpen = false;
+      }
+    };
+
+    // Toggle dropdown on button click
+    addVariableBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (isDropdownOpen) {
+        closeDropdown();
+      } else {
+        openDropdown();
+      }
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener("click", (e) => {
+      if (
+        isDropdownOpen &&
+        variablesDropdown &&
+        !variablesDropdown.contains(e.target) &&
+        !addVariableBtn.contains(e.target)
+      ) {
+        closeDropdown();
+      }
+    });
   }
 
   // Setup fullscreen button tooltip
@@ -7890,6 +9654,92 @@ function setupMessageTabs() {
       fullscreenBtn.addEventListener("mouseleave", () => {
         tooltip.classList.remove("opacity-100");
         tooltip.classList.add("opacity-0");
+      });
+
+      // Fullscreen functionality
+      let isFullscreen = false;
+      const messagesTabContent = document.getElementById("messages-tab-content");
+      const messageInputContainer = document.getElementById("message-input-container");
+      const messageInput = document.getElementById("message-input");
+
+      fullscreenBtn.addEventListener("click", () => {
+        if (!messagesTabContent || !messageInputContainer) return;
+
+        isFullscreen = !isFullscreen;
+        const icon = fullscreenBtn.querySelector("i");
+
+        if (isFullscreen) {
+          // Show and style message input container in fullscreen (fixed position)
+          messageInputContainer.classList.remove("hidden");
+          messageInputContainer.style.position = "fixed";
+          messageInputContainer.style.top = "50%";
+          messageInputContainer.style.left = "50%";
+          messageInputContainer.style.transform = "translate(-50%, -50%)";
+          messageInputContainer.style.width = "90%";
+          messageInputContainer.style.maxWidth = "700px";
+          messageInputContainer.style.height = "auto";
+          messageInputContainer.style.maxHeight = "90vh";
+          messageInputContainer.style.zIndex = "1000";
+          messageInputContainer.style.borderRadius = "12px";
+          messageInputContainer.style.boxShadow = "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)";
+          messageInputContainer.style.border = "1px solid rgba(148, 163, 184, 0.2)";
+          messageInputContainer.style.display = "flex";
+          messageInputContainer.style.flexDirection = "column";
+
+          // Increase textarea height in fullscreen mode to fill available space
+          if (messageInput) {
+            messageInput.style.minHeight = "350px";
+            messageInput.style.height = "350px";
+            messageInput.style.maxHeight = "70vh";
+            messageInput.style.flex = "1";
+          }
+
+          // Change icon to shrink
+          if (icon) {
+            icon.className = "hgi-stroke hgi-square-arrow-shrink-01 text-lg";
+          }
+
+          // Update tooltip text
+          fullscreenBtn.setAttribute("data-title-ar", "تضييق");
+          fullscreenBtn.setAttribute("data-title-en", "Shrink");
+        } else {
+          // Reset message input container
+          messageInputContainer.style.position = "";
+          messageInputContainer.style.top = "";
+          messageInputContainer.style.left = "";
+          messageInputContainer.style.transform = "";
+          messageInputContainer.style.width = "";
+          messageInputContainer.style.maxWidth = "";
+          messageInputContainer.style.height = "";
+          messageInputContainer.style.minHeight = "";
+          messageInputContainer.style.maxHeight = "";
+          messageInputContainer.style.zIndex = "";
+          messageInputContainer.style.borderRadius = "";
+          messageInputContainer.style.boxShadow = "";
+          messageInputContainer.style.border = "";
+          messageInputContainer.style.display = "";
+          // Ensure it's still visible after reset
+          messageInputContainer.classList.remove("hidden");
+
+          // Reset textarea height
+          if (messageInput) {
+            messageInput.style.minHeight = "";
+            messageInput.style.height = "";
+            messageInput.style.maxHeight = "";
+          }
+
+          // Change icon back to fullscreen
+          if (icon) {
+            icon.className = "hgi-stroke hgi-full-screen text-lg";
+          }
+
+          // Update tooltip text
+          fullscreenBtn.setAttribute("data-title-ar", "ملء");
+          fullscreenBtn.setAttribute("data-title-en", "Full");
+        }
+
+        // Update tooltip text
+        updateTooltipText();
       });
 
       // Update tooltip text when language changes
@@ -9504,10 +11354,2737 @@ if (document.readyState === "loading") {
     searchManager.init();
     notificationsManager.init();
     accountManager.init();
+    setupMessageActions();
   });
 } else {
   helpCenterManager.init();
   searchManager.init();
   notificationsManager.init();
   accountManager.init();
+  setupMessageActions();
+}
+
+// Function to add message to chat
+function addMessageToChat(messageData) {
+  const messagesContent = document.getElementById("messages-content");
+  if (!messagesContent) return;
+
+  // Initialize messages array if not exists
+  if (!window.currentChatMessages) {
+    window.currentChatMessages = [];
+  }
+
+  // Get current time
+  const now = new Date();
+  const hours = now.getHours();
+  const minutes = now.getMinutes();
+  const ampm = hours >= 12 ? "م" : "ص";
+  const displayHours = hours % 12 || 12;
+  const time = `${displayHours}:${minutes.toString().padStart(2, "0")} ${ampm}`;
+
+  // Create new message object
+  const newMessage = {
+    id: Date.now(),
+    type: messageData.type || "text",
+    text: messageData.text || "",
+    sender: messageData.sender || "me",
+    senderName: messageData.senderName || "أنت",
+    senderAvatar: messageData.senderAvatar || "https://ui-avatars.com/api/?name=You&size=32&background=0090D6&color=fff",
+    time: time,
+    status: messageData.status || "sent",
+    url: messageData.url || "",
+    fileName: messageData.fileName || "",
+    fileSize: messageData.fileSize || "",
+    fileType: messageData.fileType || "",
+    caption: messageData.caption || "",
+    thumbnail: messageData.thumbnail || "",
+    ...messageData,
+  };
+
+  // Add message to array
+  window.currentChatMessages.push(newMessage);
+
+  // Re-render messages
+  renderMessages(window.currentChatMessages, messagesContent);
+
+  // Scroll to bottom
+  setTimeout(() => {
+    messagesContent.scrollTop = messagesContent.scrollHeight;
+  }, 100);
+}
+
+// Sample flows/journeys list (Global scope)
+const sampleFlows = [
+  { id: 1, name: "تدفق الترحيب", nameEn: "Welcome Flow" },
+  { id: 2, name: "تدفق الطلب", nameEn: "Order Flow" },
+  { id: 3, name: "تدفق الدعم", nameEn: "Support Flow" },
+  { id: 4, name: "تدفق الاستطلاع", nameEn: "Survey Flow" },
+  { id: 5, name: "تدفق التسويق", nameEn: "Marketing Flow" },
+  { id: 6, name: "تدفق المتابعة", nameEn: "Follow-up Flow" },
+  { id: 7, name: "تدفق الاستفسار", nameEn: "Inquiry Flow" },
+  { id: 8, name: "تدفق التقييم", nameEn: "Rating Flow" },
+  { id: 9, name: "تدفق الإشعارات", nameEn: "Notifications Flow" },
+  { id: 10, name: "تدفق الحجز", nameEn: "Booking Flow" },
+  { id: 11, name: "تدفق الدفع", nameEn: "Payment Flow" },
+  { id: 12, name: "تدفق التأكيد", nameEn: "Confirmation Flow" },
+  { id: 13, name: "تدفق الإلغاء", nameEn: "Cancellation Flow" },
+  { id: 14, name: "تدفق الاسترجاع", nameEn: "Return Flow" },
+  { id: 15, name: "تدفق الشكاوى", nameEn: "Complaints Flow" },
+  { id: 16, name: "تدفق الاقتراحات", nameEn: "Suggestions Flow" },
+  { id: 17, name: "تدفق التحديثات", nameEn: "Updates Flow" },
+  { id: 18, name: "تدفق الإشتراك", nameEn: "Subscription Flow" },
+  { id: 19, name: "تدفق الإلغاء الإشتراك", nameEn: "Unsubscribe Flow" },
+  { id: 20, name: "تدفق التذكير", nameEn: "Reminder Flow" },
+];
+
+// Sample nodes list (Global scope)
+const sampleNodes = [
+  { id: 1, name: "عقدة البدء", nameEn: "Start Node", flowId: 1, flowName: "تدفق الترحيب", flowNameEn: "Welcome Flow" },
+  { id: 2, name: "عقدة الشرط", nameEn: "Condition Node", flowId: 1, flowName: "تدفق الترحيب", flowNameEn: "Welcome Flow" },
+  { id: 3, name: "عقدة الإرسال", nameEn: "Send Node", flowId: 2, flowName: "تدفق الطلب", flowNameEn: "Order Flow" },
+  { id: 4, name: "عقدة الانتظار", nameEn: "Wait Node", flowId: 2, flowName: "تدفق الطلب", flowNameEn: "Order Flow" },
+  { id: 5, name: "عقدة النهاية", nameEn: "End Node", flowId: 3, flowName: "تدفق الدعم", flowNameEn: "Support Flow" },
+  { id: 6, name: "عقدة التحقق", nameEn: "Verification Node", flowId: 3, flowName: "تدفق الدعم", flowNameEn: "Support Flow" },
+  { id: 7, name: "عقدة المعالجة", nameEn: "Processing Node", flowId: 4, flowName: "تدفق الاستطلاع", flowNameEn: "Survey Flow" },
+  { id: 8, name: "عقدة التخزين", nameEn: "Storage Node", flowId: 4, flowName: "تدفق الاستطلاع", flowNameEn: "Survey Flow" },
+  { id: 9, name: "عقدة الإشعار", nameEn: "Notification Node", flowId: 5, flowName: "تدفق التسويق", flowNameEn: "Marketing Flow" },
+  { id: 10, name: "عقدة التوجيه", nameEn: "Routing Node", flowId: 5, flowName: "تدفق التسويق", flowNameEn: "Marketing Flow" },
+  { id: 11, name: "عقدة التحويل", nameEn: "Transfer Node", flowId: 6, flowName: "تدفق المتابعة", flowNameEn: "Follow-up Flow" },
+  { id: 12, name: "عقدة التجميع", nameEn: "Aggregation Node", flowId: 6, flowName: "تدفق المتابعة", flowNameEn: "Follow-up Flow" },
+  { id: 13, name: "عقدة التصفية", nameEn: "Filter Node", flowId: 7, flowName: "تدفق الاستفسار", flowNameEn: "Inquiry Flow" },
+  { id: 14, name: "عقدة الفرز", nameEn: "Sort Node", flowId: 7, flowName: "تدفق الاستفسار", flowNameEn: "Inquiry Flow" },
+  { id: 15, name: "عقدة التحليل", nameEn: "Analysis Node", flowId: 8, flowName: "تدفق التقييم", flowNameEn: "Rating Flow" },
+  { id: 16, name: "عقدة التجميع", nameEn: "Collection Node", flowId: 8, flowName: "تدفق التقييم", flowNameEn: "Rating Flow" },
+  { id: 17, name: "عقدة الإرسال الجماعي", nameEn: "Bulk Send Node", flowId: 9, flowName: "تدفق الإشعارات", flowNameEn: "Notifications Flow" },
+  { id: 18, name: "عقدة الجدولة", nameEn: "Scheduling Node", flowId: 9, flowName: "تدفق الإشعارات", flowNameEn: "Notifications Flow" },
+  { id: 19, name: "عقدة التحقق من التوفر", nameEn: "Availability Check Node", flowId: 10, flowName: "تدفق الحجز", flowNameEn: "Booking Flow" },
+  { id: 20, name: "عقدة التأكيد", nameEn: "Confirmation Node", flowId: 10, flowName: "تدفق الحجز", flowNameEn: "Booking Flow" },
+  { id: 21, name: "عقدة معالجة الدفع", nameEn: "Payment Processing Node", flowId: 11, flowName: "تدفق الدفع", flowNameEn: "Payment Flow" },
+  { id: 22, name: "عقدة التحقق من الدفع", nameEn: "Payment Verification Node", flowId: 11, flowName: "تدفق الدفع", flowNameEn: "Payment Flow" },
+  { id: 23, name: "عقدة إرسال التأكيد", nameEn: "Send Confirmation Node", flowId: 12, flowName: "تدفق التأكيد", flowNameEn: "Confirmation Flow" },
+  { id: 24, name: "عقدة تحديث الحالة", nameEn: "Status Update Node", flowId: 12, flowName: "تدفق التأكيد", flowNameEn: "Confirmation Flow" },
+  { id: 25, name: "عقدة التحقق من الإلغاء", nameEn: "Cancellation Check Node", flowId: 13, flowName: "تدفق الإلغاء", flowNameEn: "Cancellation Flow" },
+  { id: 26, name: "عقدة معالجة الإلغاء", nameEn: "Cancellation Processing Node", flowId: 13, flowName: "تدفق الإلغاء", flowNameEn: "Cancellation Flow" },
+  { id: 27, name: "عقدة التحقق من الاسترجاع", nameEn: "Return Check Node", flowId: 14, flowName: "تدفق الاسترجاع", flowNameEn: "Return Flow" },
+  { id: 28, name: "عقدة معالجة الاسترجاع", nameEn: "Return Processing Node", flowId: 14, flowName: "تدفق الاسترجاع", flowNameEn: "Return Flow" },
+  { id: 29, name: "عقدة استقبال الشكوى", nameEn: "Complaint Reception Node", flowId: 15, flowName: "تدفق الشكاوى", flowNameEn: "Complaints Flow" },
+  { id: 30, name: "عقدة معالجة الشكوى", nameEn: "Complaint Processing Node", flowId: 15, flowName: "تدفق الشكاوى", flowNameEn: "Complaints Flow" },
+  { id: 31, name: "عقدة جمع الاقتراحات", nameEn: "Suggestion Collection Node", flowId: 16, flowName: "تدفق الاقتراحات", flowNameEn: "Suggestions Flow" },
+  { id: 32, name: "عقدة مراجعة الاقتراحات", nameEn: "Suggestion Review Node", flowId: 16, flowName: "تدفق الاقتراحات", flowNameEn: "Suggestions Flow" },
+  { id: 33, name: "عقدة إرسال التحديثات", nameEn: "Send Updates Node", flowId: 17, flowName: "تدفق التحديثات", flowNameEn: "Updates Flow" },
+  { id: 34, name: "عقدة تتبع التحديثات", nameEn: "Track Updates Node", flowId: 17, flowName: "تدفق التحديثات", flowNameEn: "Updates Flow" },
+  { id: 35, name: "عقدة معالجة الاشتراك", nameEn: "Subscription Processing Node", flowId: 18, flowName: "تدفق الإشتراك", flowNameEn: "Subscription Flow" },
+  { id: 36, name: "عقدة تفعيل الاشتراك", nameEn: "Subscription Activation Node", flowId: 18, flowName: "تدفق الإشتراك", flowNameEn: "Subscription Flow" },
+  { id: 37, name: "عقدة التحقق من الإلغاء", nameEn: "Unsubscribe Check Node", flowId: 19, flowName: "تدفق الإلغاء الإشتراك", flowNameEn: "Unsubscribe Flow" },
+  { id: 38, name: "عقدة معالجة الإلغاء", nameEn: "Unsubscribe Processing Node", flowId: 19, flowName: "تدفق الإلغاء الإشتراك", flowNameEn: "Unsubscribe Flow" },
+  { id: 39, name: "عقدة إنشاء التذكير", nameEn: "Reminder Creation Node", flowId: 20, flowName: "تدفق التذكير", flowNameEn: "Reminder Flow" },
+  { id: 40, name: "عقدة إرسال التذكير", nameEn: "Reminder Send Node", flowId: 20, flowName: "تدفق التذكير", flowNameEn: "Reminder Flow" },
+  { id: 41, name: "عقدة التحقق من الهوية", nameEn: "Identity Verification Node", flowId: 1, flowName: "تدفق الترحيب", flowNameEn: "Welcome Flow" },
+  { id: 42, name: "عقدة التخزين المؤقت", nameEn: "Cache Node", flowId: 2, flowName: "تدفق الطلب", flowNameEn: "Order Flow" },
+  { id: 43, name: "عقدة التحقق من الصلاحيات", nameEn: "Permission Check Node", flowId: 3, flowName: "تدفق الدعم", flowNameEn: "Support Flow" },
+  { id: 44, name: "عقدة التسجيل", nameEn: "Logging Node", flowId: 4, flowName: "تدفق الاستطلاع", flowNameEn: "Survey Flow" },
+  { id: 45, name: "عقدة التحقق من الصحة", nameEn: "Validation Node", flowId: 5, flowName: "تدفق التسويق", flowNameEn: "Marketing Flow" },
+  { id: 46, name: "عقدة التنسيق", nameEn: "Formatting Node", flowId: 6, flowName: "تدفق المتابعة", flowNameEn: "Follow-up Flow" },
+  { id: 47, name: "عقدة التحويل", nameEn: "Conversion Node", flowId: 7, flowName: "تدفق الاستفسار", flowNameEn: "Inquiry Flow" },
+  { id: 48, name: "عقدة التجميع", nameEn: "Grouping Node", flowId: 8, flowName: "تدفق التقييم", flowNameEn: "Rating Flow" },
+  { id: 49, name: "عقدة التوزيع", nameEn: "Distribution Node", flowId: 9, flowName: "تدفق الإشعارات", flowNameEn: "Notifications Flow" },
+  { id: 50, name: "عقدة الإنهاء", nameEn: "Termination Node", flowId: 10, flowName: "تدفق الحجز", flowNameEn: "Booking Flow" },
+];
+
+// Setup message actions (send, emoji, image, video, file, voice)
+function setupMessageActions() {
+  const messageInput = document.getElementById("message-input");
+  const sendBtn = document.getElementById("send-message-btn");
+  const emojiBtn = document.querySelector('[data-title-ar="إيموجي"]');
+  const imageBtn = document.querySelector('[data-title-ar="صورة"]');
+  const videoBtn = document.querySelector('[data-title-ar="فيديو"]');
+  const fileBtn = document.querySelector('[data-title-ar="ملف"]');
+  const voiceBtn = document.querySelector('[data-title-ar="صوت"]');
+  const flowBtn = document.querySelector('[data-title-ar="تدفق"]');
+  const mediaPreviewSection = document.getElementById("media-preview-section");
+  const mediaPreviewContainer = document.getElementById("media-preview-container");
+
+  // Store attached media files
+  let attachedMedia = [];
+
+  // Function to add media to preview
+  const addMediaToPreview = (file, type) => {
+    const mediaId = `media-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const mediaItem = { id: mediaId, file, type };
+    attachedMedia.push(mediaItem);
+
+    // Show preview section
+    if (mediaPreviewSection) {
+      mediaPreviewSection.classList.remove("hidden");
+    }
+
+    // Create preview element
+    const previewDiv = document.createElement("div");
+    previewDiv.id = mediaId;
+    previewDiv.className = "relative w-16 h-16 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 group";
+
+    if (type === "image") {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        previewDiv.innerHTML = `
+          <img src="${e.target.result}" alt="Preview" class="w-full h-full object-cover" />
+          <button
+            class="absolute top-0.5 end-0.5 w-5 h-5 flex items-center justify-center rounded-full bg-red-500 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-150 remove-media-btn"
+            data-media-id="${mediaId}"
+            type="button"
+          >
+            <i class="hgi-stroke hgi-cancel-01 text-[10px]"></i>
+          </button>
+        `;
+      };
+      reader.readAsDataURL(file);
+    } else if (type === "video") {
+      const videoUrl = URL.createObjectURL(file);
+      previewDiv.innerHTML = `
+        <video src="${videoUrl}" class="w-full h-full object-cover" muted></video>
+        <div class="absolute inset-0 flex items-center justify-center bg-black/30">
+          <i class="hgi-stroke hgi-play text-white text-lg"></i>
+        </div>
+        <button
+          class="absolute top-0.5 end-0.5 w-5 h-5 flex items-center justify-center rounded-full bg-red-500 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-150 remove-media-btn"
+          data-media-id="${mediaId}"
+          type="button"
+        >
+          <i class="hgi-stroke hgi-cancel-01 text-[10px]"></i>
+        </button>
+      `;
+    } else if (type === "file") {
+      const fileSize = (file.size / 1024 / 1024).toFixed(2);
+      previewDiv.className = "relative w-32 h-14 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 group flex items-center gap-1.5 px-2";
+      previewDiv.innerHTML = `
+        <div class="flex-1 min-w-0">
+          <div class="text-[10px] font-medium text-slate-900 dark:text-slate-100 truncate">${file.name}</div>
+          <div class="text-[10px] text-slate-500 dark:text-slate-400">${fileSize} MB</div>
+        </div>
+        <button
+          class="flex-shrink-0 w-5 h-5 flex items-center justify-center rounded-full bg-red-500 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-150 remove-media-btn"
+          data-media-id="${mediaId}"
+          type="button"
+        >
+          <i class="hgi-stroke hgi-cancel-01 text-[10px]"></i>
+        </button>
+      `;
+    }
+
+    if (mediaPreviewContainer) {
+      mediaPreviewContainer.appendChild(previewDiv);
+    }
+
+    // Add remove button listener
+    const removeBtn = previewDiv.querySelector(".remove-media-btn");
+    if (removeBtn) {
+      removeBtn.addEventListener("click", () => {
+        removeMediaFromPreview(mediaId);
+      });
+    }
+  };
+
+  // Function to remove media from preview
+  const removeMediaFromPreview = (mediaId) => {
+    attachedMedia = attachedMedia.filter(item => item.id !== mediaId);
+    const previewElement = document.getElementById(mediaId);
+    if (previewElement) {
+      previewElement.remove();
+    }
+
+    // Hide preview section if no media left
+    if (attachedMedia.length === 0 && mediaPreviewSection) {
+      mediaPreviewSection.classList.add("hidden");
+    }
+  };
+
+  // Function to clear all media
+  const clearAllMedia = () => {
+    attachedMedia = [];
+    if (mediaPreviewContainer) {
+      mediaPreviewContainer.innerHTML = "";
+    }
+    if (mediaPreviewSection) {
+      mediaPreviewSection.classList.add("hidden");
+    }
+  };
+
+  // Handle paste event for images, videos, and files
+  if (messageInput) {
+    messageInput.addEventListener("paste", (e) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        
+        if (item.type.indexOf("image") !== -1) {
+          e.preventDefault();
+          const file = item.getAsFile();
+          if (file) {
+            addMediaToPreview(file, "image");
+          }
+        } else if (item.type.indexOf("video") !== -1) {
+          e.preventDefault();
+          const file = item.getAsFile();
+          if (file) {
+            addMediaToPreview(file, "video");
+          }
+        }
+      }
+    });
+  }
+
+  // Send message
+  if (sendBtn && messageInput) {
+    sendBtn.addEventListener("click", () => {
+      const messageText = messageInput.value.trim();
+      const hasMedia = attachedMedia.length > 0;
+
+      // Send text message if there's text and no media
+      if (messageText && !hasMedia) {
+        // Prepare message data
+        const messageData = {
+          type: "text",
+          text: messageText,
+          sender: "me",
+          status: "sent",
+        };
+
+        // Add reply info if exists
+        if (replyMessageInfo) {
+          messageData.replyTo = {
+            messageId: replyMessageInfo.id,
+            text: replyMessageInfo.text,
+            sender: replyMessageInfo.sender,
+            senderName: replyMessageInfo.senderName || (replyMessageInfo.isMe ? "أنت" : replyMessageInfo.sender),
+          };
+        }
+
+        // Send message
+        addMessageToChat(messageData);
+
+        // Clear input
+        messageInput.value = "";
+
+        // Clear reply info and hide preview
+        if (replyMessageInfo) {
+          replyMessageInfo = null;
+          // Hide reply preview if exists
+          const replyPreview = document.getElementById("reply-preview");
+          if (replyPreview) {
+            replyPreview.classList.add("hidden");
+          }
+        }
+      }
+
+      // Send media files
+      if (hasMedia) {
+        attachedMedia.forEach((mediaItem) => {
+          let messageData = {};
+
+          if (mediaItem.type === "image") {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+              messageData = {
+                type: "image",
+                url: event.target.result,
+                caption: messageText || "",
+                sender: "me",
+                status: "sent",
+              };
+
+              // Add reply info if exists
+              if (replyMessageInfo) {
+                messageData.replyTo = {
+                  messageId: replyMessageInfo.id,
+                  text: replyMessageInfo.text,
+                  sender: replyMessageInfo.sender,
+                  senderName: replyMessageInfo.senderName || (replyMessageInfo.isMe ? "أنت" : replyMessageInfo.sender),
+                };
+              }
+
+              addMessageToChat(messageData);
+            };
+            reader.readAsDataURL(mediaItem.file);
+          } else if (mediaItem.type === "video") {
+            messageData = {
+              type: "video",
+              url: URL.createObjectURL(mediaItem.file),
+              thumbnail: "",
+              caption: messageText || mediaItem.file.name,
+              sender: "me",
+              status: "sent",
+            };
+
+            // Add reply info if exists
+            if (replyMessageInfo) {
+              messageData.replyTo = {
+                messageId: replyMessageInfo.id,
+                text: replyMessageInfo.text,
+                sender: replyMessageInfo.sender,
+                senderName: replyMessageInfo.senderName || (replyMessageInfo.isMe ? "أنت" : replyMessageInfo.sender),
+              };
+            }
+
+            addMessageToChat(messageData);
+          } else if (mediaItem.type === "file") {
+            const fileSize = (mediaItem.file.size / 1024 / 1024).toFixed(2) + " MB";
+            const fileExtension = mediaItem.file.name.split(".").pop().toLowerCase();
+            messageData = {
+              type: "file",
+              url: URL.createObjectURL(mediaItem.file),
+              fileName: mediaItem.file.name,
+              fileSize: fileSize,
+              fileType: fileExtension,
+              sender: "me",
+              status: "sent",
+            };
+
+            // Add reply info if exists
+            if (replyMessageInfo) {
+              messageData.replyTo = {
+                messageId: replyMessageInfo.id,
+                text: replyMessageInfo.text,
+                sender: replyMessageInfo.sender,
+                senderName: replyMessageInfo.senderName || (replyMessageInfo.isMe ? "أنت" : replyMessageInfo.sender),
+              };
+            }
+
+            addMessageToChat(messageData);
+          }
+        });
+
+        // Clear media and input
+        clearAllMedia();
+        messageInput.value = "";
+
+        // Clear reply info and hide preview
+        if (replyMessageInfo) {
+          replyMessageInfo = null;
+          const replyPreview = document.getElementById("reply-preview");
+          if (replyPreview) {
+            replyPreview.classList.add("hidden");
+          }
+        }
+      }
+    });
+
+    // Send on Enter (but allow Shift+Enter for new line)
+    messageInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendBtn.click();
+      }
+    });
+  }
+
+  // Emoji picker
+  let emojiPicker = null;
+  let isEmojiPickerOpen = false;
+
+  const createEmojiPicker = () => {
+    if (emojiPicker) return emojiPicker;
+
+    const commonEmojis = [
+      "😀", "😃", "😄", "😁", "😆", "😅", "😂", "🤣", "😊", "😇",
+      "🙂", "🙃", "😉", "😌", "😍", "🥰", "😘", "😗", "😙", "😚",
+      "😋", "😛", "😝", "😜", "🤪", "🤨", "🧐", "🤓", "😎", "🤩",
+      "🥳", "😏", "😒", "😞", "😔", "😟", "😕", "🙁", "☹️", "😣",
+      "😖", "😫", "😩", "🥺", "😢", "😭", "😤", "😠", "😡", "🤬",
+      "👍", "👎", "👌", "✌️", "🤞", "🤟", "🤘", "👏", "🙌", "👐",
+      "❤️", "🧡", "💛", "💚", "💙", "💜", "🖤", "🤍", "🤎", "💔",
+      "❣️", "💕", "💞", "💓", "💗", "💖", "💘", "💝", "💟", "☮️",
+    ];
+
+    emojiPicker = document.createElement("div");
+    emojiPicker.id = "emoji-picker";
+    emojiPicker.className =
+      "absolute bottom-full mb-2 left-0 w-64 h-64 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 p-3 grid grid-cols-8 gap-1 overflow-y-auto z-[1000]";
+    emojiPicker.style.display = "none";
+    emojiPicker.style.maxHeight = "256px";
+
+    commonEmojis.forEach((emoji) => {
+      const emojiBtn = document.createElement("button");
+      emojiBtn.type = "button";
+      emojiBtn.className =
+        "w-8 h-8 flex items-center justify-center text-xl hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors duration-150";
+      emojiBtn.textContent = emoji;
+      emojiBtn.addEventListener("click", () => {
+        if (messageInput) {
+          const cursorPos = messageInput.selectionStart || messageInput.value.length;
+          const textBefore = messageInput.value.substring(0, cursorPos);
+          const textAfter = messageInput.value.substring(cursorPos);
+          messageInput.value = textBefore + emoji + textAfter;
+          messageInput.focus();
+          messageInput.setSelectionRange(cursorPos + emoji.length, cursorPos + emoji.length);
+        }
+        closeEmojiPicker();
+      });
+      emojiPicker.appendChild(emojiBtn);
+    });
+
+    const emojiBtnParent = emojiBtn?.parentElement;
+    if (emojiBtnParent) {
+      emojiBtnParent.style.position = "relative";
+      emojiBtnParent.appendChild(emojiPicker);
+    }
+
+    return emojiPicker;
+  };
+
+  const openEmojiPicker = () => {
+    if (!emojiPicker) {
+      createEmojiPicker();
+    }
+    if (emojiPicker) {
+      const isRTL = document.documentElement.getAttribute("dir") === "rtl";
+      if (isRTL) {
+        emojiPicker.style.right = "0";
+        emojiPicker.style.left = "auto";
+      } else {
+        emojiPicker.style.left = "0";
+        emojiPicker.style.right = "auto";
+      }
+      emojiPicker.style.display = "grid";
+      isEmojiPickerOpen = true;
+    }
+  };
+
+  const closeEmojiPicker = () => {
+    if (emojiPicker) {
+      emojiPicker.style.display = "none";
+      isEmojiPickerOpen = false;
+    }
+  };
+
+  if (emojiBtn) {
+    emojiBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (isEmojiPickerOpen) {
+        closeEmojiPicker();
+      } else {
+        openEmojiPicker();
+      }
+    });
+  }
+
+  // Close emoji picker when clicking outside
+  document.addEventListener("click", (e) => {
+    if (
+      isEmojiPickerOpen &&
+      emojiPicker &&
+      !emojiPicker.contains(e.target) &&
+      !emojiBtn?.contains(e.target)
+    ) {
+      closeEmojiPicker();
+    }
+  });
+
+  // Image picker
+  if (imageBtn) {
+    const imageInput = document.createElement("input");
+    imageInput.type = "file";
+    imageInput.accept = "image/*";
+    imageInput.multiple = true;
+    imageInput.style.display = "none";
+    document.body.appendChild(imageInput);
+
+    imageBtn.addEventListener("click", () => {
+      imageInput.click();
+    });
+
+    imageInput.addEventListener("change", (e) => {
+      const files = Array.from(e.target.files);
+      if (files.length > 0) {
+        files.forEach(file => {
+          addMediaToPreview(file, "image");
+        });
+      }
+      // Reset input
+      imageInput.value = "";
+    });
+  }
+
+  // Video picker
+  if (videoBtn) {
+    const videoInput = document.createElement("input");
+    videoInput.type = "file";
+    videoInput.accept = "video/*";
+    videoInput.multiple = true;
+    videoInput.style.display = "none";
+    document.body.appendChild(videoInput);
+
+    videoBtn.addEventListener("click", () => {
+      videoInput.click();
+    });
+
+    videoInput.addEventListener("change", (e) => {
+      const files = Array.from(e.target.files);
+      if (files.length > 0) {
+        files.forEach(file => {
+          addMediaToPreview(file, "video");
+        });
+      }
+      // Reset input
+      videoInput.value = "";
+    });
+  }
+
+  // File picker
+  if (fileBtn) {
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.multiple = true;
+    fileInput.style.display = "none";
+    document.body.appendChild(fileInput);
+
+    fileBtn.addEventListener("click", () => {
+      fileInput.click();
+    });
+
+    fileInput.addEventListener("change", (e) => {
+      const files = Array.from(e.target.files);
+      if (files.length > 0) {
+        files.forEach(file => {
+          addMediaToPreview(file, "file");
+        });
+      }
+      // Reset input
+      fileInput.value = "";
+    });
+  }
+
+  // Voice recorder
+  let mediaRecorder = null;
+  let audioChunks = [];
+  let isRecording = false;
+  let isPaused = false;
+  let recordingStartTime = 0;
+  let pausedDuration = 0;
+  let pauseStartTime = 0;
+  let recordingTimer = null;
+  let audioStream = null;
+  let isCancelled = false; // Flag to track if recording was cancelled
+
+  const voiceRecordBtn = document.getElementById("voice-record-btn");
+  const voiceRecordingControls = document.getElementById("voice-recording-controls");
+  const voiceRecordingTimer = document.getElementById("voice-recording-timer");
+  const voicePauseBtn = document.getElementById("voice-pause-btn");
+  const voiceCancelBtn = document.getElementById("voice-cancel-btn");
+
+  // Function to format time (seconds to MM:SS)
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
+
+  // Function to update timer
+  const updateTimer = () => {
+    if (!isRecording || isPaused) return;
+    
+    const currentTime = Date.now();
+    const elapsed = Math.floor((currentTime - recordingStartTime - pausedDuration) / 1000);
+    if (voiceRecordingTimer) {
+      voiceRecordingTimer.textContent = formatTime(elapsed);
+    }
+  };
+
+  // Function to start timer
+  const startTimer = () => {
+    if (recordingTimer) clearInterval(recordingTimer);
+    recordingTimer = setInterval(updateTimer, 1000);
+  };
+
+  // Function to stop timer
+  const stopTimer = () => {
+    if (recordingTimer) {
+      clearInterval(recordingTimer);
+      recordingTimer = null;
+    }
+  };
+
+  // Function to reset recording UI
+  const resetRecordingUI = () => {
+    if (voiceRecordBtn) {
+      voiceRecordBtn.style.color = "#003e5c";
+    }
+    if (voiceRecordingControls) {
+      voiceRecordingControls.classList.add("hidden");
+    }
+    if (voiceRecordingTimer) {
+      voiceRecordingTimer.textContent = "0:00";
+    }
+    stopTimer();
+    isRecording = false;
+    isPaused = false;
+    pausedDuration = 0;
+    recordingStartTime = 0;
+    pauseStartTime = 0;
+  };
+
+  // Start/Stop recording
+  if (voiceRecordBtn) {
+    voiceRecordBtn.addEventListener("click", async () => {
+      if (!isRecording) {
+        try {
+          audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          mediaRecorder = new MediaRecorder(audioStream);
+          audioChunks = [];
+
+          mediaRecorder.ondataavailable = (event) => {
+            if (event.data.size > 0) {
+              audioChunks.push(event.data);
+            }
+          };
+
+          mediaRecorder.onstop = () => {
+            // Only save recording if it wasn't cancelled
+            if (!isCancelled && audioChunks.length > 0) {
+              const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+              const audioUrl = URL.createObjectURL(audioBlob);
+              const messageData = {
+                type: "audio",
+                url: audioUrl,
+                sender: "me",
+                status: "sent",
+              };
+
+              // Add reply info if exists
+              if (replyMessageInfo) {
+                messageData.replyTo = {
+                  messageId: replyMessageInfo.id,
+                  text: replyMessageInfo.text,
+                  sender: replyMessageInfo.sender,
+                  senderName: replyMessageInfo.senderName || (replyMessageInfo.isMe ? "أنت" : replyMessageInfo.sender),
+                };
+                // Clear reply info after adding
+                replyMessageInfo = null;
+                const replyPreview = document.getElementById("reply-preview");
+                if (replyPreview) {
+                  replyPreview.classList.add("hidden");
+                }
+              }
+
+              addMessageToChat(messageData);
+            }
+            // Clear audio chunks
+            audioChunks = [];
+            if (audioStream) {
+              audioStream.getTracks().forEach((track) => track.stop());
+              audioStream = null;
+            }
+            resetRecordingUI();
+            isCancelled = false; // Reset cancellation flag
+          };
+
+          mediaRecorder.onpause = () => {
+            pauseStartTime = Date.now();
+          };
+
+          mediaRecorder.onresume = () => {
+            if (pauseStartTime > 0) {
+              pausedDuration += Date.now() - pauseStartTime;
+              pauseStartTime = 0;
+            }
+          };
+
+          mediaRecorder.start();
+          isRecording = true;
+          isPaused = false;
+          isCancelled = false; // Reset cancellation flag
+          recordingStartTime = Date.now();
+          pausedDuration = 0;
+          
+          // Update UI
+          if (voiceRecordBtn) {
+            voiceRecordBtn.style.color = "#ef4444"; // Red color when recording
+          }
+          if (voiceRecordingControls) {
+            voiceRecordingControls.classList.remove("hidden");
+          }
+          startTimer();
+          console.log("Recording started");
+        } catch (error) {
+          console.error("Error accessing microphone:", error);
+          alert("لا يمكن الوصول إلى الميكروفون");
+        }
+      } else {
+        // Stop recording
+        if (mediaRecorder && mediaRecorder.state !== "inactive") {
+          stopTimer();
+          mediaRecorder.stop();
+        }
+      }
+    });
+  }
+
+  // Flow button - open flow selection modal
+  if (flowBtn) {
+    flowBtn.addEventListener("click", () => {
+      // Get modal elements
+      const flowSelectionModal = document.getElementById("flow-selection-modal");
+      const flowTabFlows = document.getElementById("flow-selection-tab-flows");
+      const flowTabNodes = document.getElementById("flow-selection-tab-nodes");
+      const flowFlowsContent = document.getElementById("flow-selection-flows-content");
+      const flowNodesContent = document.getElementById("flow-selection-nodes-content");
+      const flowFlowsGrid = document.getElementById("flow-selection-flows-grid");
+      const flowNodesList = document.getElementById("flow-selection-nodes-list");
+      const flowSearchInput = document.getElementById("flow-selection-search");
+      const flowFlowsPagination = document.getElementById("flow-selection-flows-pagination");
+      const flowNodesPagination = document.getElementById("flow-selection-nodes-pagination");
+      
+      if (!flowSelectionModal) return;
+      
+      const lang = document.documentElement.getAttribute("lang") || "ar";
+      
+      // Mark as from message input
+      flowSelectionModal.dataset.source = "message";
+      flowSelectionModal.dataset.buttonIndex = "";
+      
+      // Reset to flows tab
+      if (flowTabFlows && flowTabNodes && flowFlowsContent && flowNodesContent) {
+        flowTabFlows.classList.add("border-b-2", "border-blue-500");
+        flowTabFlows.classList.remove("text-slate-500", "dark:text-slate-400");
+        flowTabFlows.classList.add("text-slate-700", "dark:text-slate-300");
+        flowTabNodes.classList.remove("border-b-2", "border-blue-500");
+        flowTabNodes.classList.add("text-slate-500", "dark:text-slate-400");
+        flowTabNodes.classList.remove("text-slate-700", "dark:text-slate-300");
+        flowFlowsContent.classList.remove("hidden");
+        flowNodesContent.classList.add("hidden");
+      }
+      
+      // Reset search and pagination
+      if (flowSearchInput) {
+        flowSearchInput.value = "";
+      }
+      let currentFlowPage = 1;
+      let currentNodePage = 1;
+      let filteredFlows = [...sampleFlows];
+      let filteredNodes = [...sampleNodes];
+      
+      // Function to render flows
+      const renderFlows = (flows, page = 1) => {
+        if (!flowFlowsGrid) return;
+        
+        const flowsPerPage = 6;
+        const startIndex = (page - 1) * flowsPerPage;
+        const endIndex = startIndex + flowsPerPage;
+        const paginatedFlows = flows.slice(startIndex, endIndex);
+        
+        flowFlowsGrid.innerHTML = "";
+        
+        if (paginatedFlows.length === 0) {
+          flowFlowsGrid.innerHTML = `
+            <div class="text-center py-8 text-slate-500 dark:text-slate-400">
+              ${lang === "ar" ? "لا توجد تدفقات" : "No flows found"}
+            </div>
+          `;
+          return;
+        }
+        
+        const grid = document.createElement("div");
+        grid.className = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4";
+        
+        paginatedFlows.forEach(flow => {
+          const flowCard = document.createElement("div");
+          flowCard.className = "p-4 border border-slate-200 dark:border-slate-700 rounded-lg hover:border-blue-500 dark:hover:border-blue-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors duration-150 cursor-pointer";
+          flowCard.dataset.flowId = flow.id;
+          flowCard.innerHTML = `
+            <div class="flex items-center gap-3">
+              <div class="flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center" style="background-color: #dbf3ff;">
+                <i class="hgi-stroke hgi-flow-chart text-lg" style="color: #003e5c;"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
+                  ${lang === "ar" ? flow.name : flow.nameEn}
+                </p>
+              </div>
+            </div>
+          `;
+          
+          flowCard.addEventListener("click", () => {
+            const messageInput = document.getElementById("message-input");
+            if (messageInput) {
+              const flowText = `{{flow:${flow.id}}}`;
+              const cursorPos = messageInput.selectionStart || messageInput.value.length;
+              const textBefore = messageInput.value.substring(0, cursorPos);
+              const textAfter = messageInput.value.substring(cursorPos);
+              messageInput.value = textBefore + flowText + textAfter;
+              messageInput.setSelectionRange(cursorPos + flowText.length, cursorPos + flowText.length);
+              messageInput.focus();
+            }
+            flowSelectionModal.classList.add("hidden");
+          });
+          
+          grid.appendChild(flowCard);
+        });
+        
+        flowFlowsGrid.appendChild(grid);
+      };
+      
+      // Function to render nodes
+      const renderNodes = (nodes, page = 1) => {
+        if (!flowNodesList) return;
+        
+        const nodesPerPage = 10;
+        const startIndex = (page - 1) * nodesPerPage;
+        const endIndex = startIndex + nodesPerPage;
+        const paginatedNodes = nodes.slice(startIndex, endIndex);
+        
+        flowNodesList.innerHTML = "";
+        
+        if (paginatedNodes.length === 0) {
+          flowNodesList.innerHTML = `
+            <div class="text-center py-8 text-slate-500 dark:text-slate-400">
+              ${lang === "ar" ? "لا توجد عقد" : "No nodes found"}
+            </div>
+          `;
+          return;
+        }
+        
+        paginatedNodes.forEach(node => {
+          const nodeRow = document.createElement("div");
+          nodeRow.className = "flex items-center justify-between p-3 border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors duration-150";
+          nodeRow.innerHTML = `
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-3">
+                <div class="flex-shrink-0">
+                  <i class="hgi-stroke hgi-node text-lg text-slate-400 dark:text-slate-500"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium text-slate-900 dark:text-slate-100">
+                    ${lang === "ar" ? node.name : node.nameEn}
+                  </p>
+                  <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    ${lang === "ar" ? node.flowName : node.flowNameEn}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <button
+              class="px-3 py-1.5 text-xs font-medium text-white rounded-lg transition-colors duration-150 hover:opacity-90"
+              style="background-color: #0090D6;"
+              data-node-id="${node.id}"
+            >
+              ${lang === "ar" ? "اختر" : "Select"}
+            </button>
+          `;
+          
+          const selectBtn = nodeRow.querySelector("button");
+          selectBtn.addEventListener("click", () => {
+            const messageInput = document.getElementById("message-input");
+            if (messageInput) {
+              const nodeText = `{{node:${node.id}}}`;
+              const cursorPos = messageInput.selectionStart || messageInput.value.length;
+              const textBefore = messageInput.value.substring(0, cursorPos);
+              const textAfter = messageInput.value.substring(cursorPos);
+              messageInput.value = textBefore + nodeText + textAfter;
+              messageInput.setSelectionRange(cursorPos + nodeText.length, cursorPos + nodeText.length);
+              messageInput.focus();
+            }
+            flowSelectionModal.classList.add("hidden");
+          });
+          
+          flowNodesList.appendChild(nodeRow);
+        });
+      };
+      
+      // Function to render pagination
+      const renderPagination = (container, currentPage, totalPages, onPageChange) => {
+        if (!container) return;
+        
+        container.innerHTML = "";
+        
+        if (totalPages <= 1) return;
+        
+        const paginationDiv = document.createElement("div");
+        paginationDiv.className = "flex items-center justify-between w-full";
+        
+        const prevBtn = document.createElement("button");
+        prevBtn.className = `px-3 py-1.5 text-sm font-medium rounded-lg transition-colors duration-150 ${
+          currentPage === 1
+            ? "text-slate-400 dark:text-slate-600 cursor-not-allowed"
+            : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+        }`;
+        prevBtn.textContent = lang === "ar" ? "السابق" : "Previous";
+        prevBtn.disabled = currentPage === 1;
+        prevBtn.addEventListener("click", () => {
+          if (currentPage > 1) {
+            onPageChange(currentPage - 1);
+          }
+        });
+        
+        const pageNumbers = document.createElement("div");
+        pageNumbers.className = "flex items-center gap-1";
+        
+        const maxVisible = 5;
+        let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+        let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+        
+        if (endPage - startPage < maxVisible - 1) {
+          startPage = Math.max(1, endPage - maxVisible + 1);
+        }
+        
+        if (startPage > 1) {
+          const firstBtn = document.createElement("button");
+          firstBtn.className = "px-2 py-1 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors duration-150";
+          firstBtn.textContent = "1";
+          firstBtn.addEventListener("click", () => onPageChange(1));
+          pageNumbers.appendChild(firstBtn);
+          
+          if (startPage > 2) {
+            const ellipsis = document.createElement("span");
+            ellipsis.className = "px-2 text-slate-400 dark:text-slate-600";
+            ellipsis.textContent = "...";
+            pageNumbers.appendChild(ellipsis);
+          }
+        }
+        
+        for (let i = startPage; i <= endPage; i++) {
+          const pageBtn = document.createElement("button");
+          pageBtn.className = `px-2 py-1 text-sm font-medium rounded transition-colors duration-150 ${
+            i === currentPage
+              ? "bg-blue-500 text-white"
+              : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+          }`;
+          pageBtn.textContent = i;
+          pageBtn.addEventListener("click", () => onPageChange(i));
+          pageNumbers.appendChild(pageBtn);
+        }
+        
+        if (endPage < totalPages) {
+          if (endPage < totalPages - 1) {
+            const ellipsis = document.createElement("span");
+            ellipsis.className = "px-2 text-slate-400 dark:text-slate-600";
+            ellipsis.textContent = "...";
+            pageNumbers.appendChild(ellipsis);
+          }
+          
+          const lastBtn = document.createElement("button");
+          lastBtn.className = "px-2 py-1 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors duration-150";
+          lastBtn.textContent = totalPages;
+          lastBtn.addEventListener("click", () => onPageChange(totalPages));
+          pageNumbers.appendChild(lastBtn);
+        }
+        
+        const nextBtn = document.createElement("button");
+        nextBtn.className = `px-3 py-1.5 text-sm font-medium rounded-lg transition-colors duration-150 ${
+          currentPage === totalPages
+            ? "text-slate-400 dark:text-slate-600 cursor-not-allowed"
+            : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+        }`;
+        nextBtn.textContent = lang === "ar" ? "التالي" : "Next";
+        nextBtn.disabled = currentPage === totalPages;
+        nextBtn.addEventListener("click", () => {
+          if (currentPage < totalPages) {
+            onPageChange(currentPage + 1);
+          }
+        });
+        
+        const pageInfo = document.createElement("div");
+        pageInfo.className = "text-xs text-slate-500 dark:text-slate-400";
+        const totalItems = container.id.includes("flows") ? filteredFlows.length : filteredNodes.length;
+        const startItem = (currentPage - 1) * (container.id.includes("flows") ? 6 : 10) + 1;
+        const endItem = Math.min(currentPage * (container.id.includes("flows") ? 6 : 10), totalItems);
+        pageInfo.textContent = `${startItem}-${endItem} ${lang === "ar" ? "من" : "of"} ${totalItems}`;
+        
+        paginationDiv.appendChild(prevBtn);
+        paginationDiv.appendChild(pageNumbers);
+        paginationDiv.appendChild(nextBtn);
+        paginationDiv.appendChild(pageInfo);
+        
+        container.appendChild(paginationDiv);
+      };
+      
+      // Helper functions for pagination
+      const updateFlowsPage = (page) => {
+        currentFlowPage = page;
+        renderFlows(filteredFlows, currentFlowPage);
+        renderPagination(flowFlowsPagination, currentFlowPage, Math.ceil(filteredFlows.length / 6), updateFlowsPage);
+      };
+      
+      const updateNodesPage = (page) => {
+        currentNodePage = page;
+        renderNodes(filteredNodes, currentNodePage);
+        renderPagination(flowNodesPagination, currentNodePage, Math.ceil(filteredNodes.length / 10), updateNodesPage);
+      };
+      
+      // Setup search for flows
+      if (flowSearchInput) {
+        // Remove existing listeners to prevent duplicates
+        const newSearchInput = flowSearchInput.cloneNode(true);
+        flowSearchInput.parentNode.replaceChild(newSearchInput, flowSearchInput);
+        
+        newSearchInput.addEventListener("input", (e) => {
+          const searchTerm = e.target.value.toLowerCase();
+          filteredFlows = sampleFlows.filter(flow => {
+            const name = (lang === "ar" ? flow.name : flow.nameEn).toLowerCase();
+            return name.includes(searchTerm);
+          });
+          currentFlowPage = 1;
+          renderFlows(filteredFlows, currentFlowPage);
+          renderPagination(flowFlowsPagination, currentFlowPage, Math.ceil(filteredFlows.length / 6), updateFlowsPage);
+        });
+      }
+      
+      // Setup search for nodes
+      const flowNodesSearchInput = document.getElementById("flow-selection-nodes-search");
+      if (flowNodesSearchInput) {
+        // Remove existing listeners to prevent duplicates
+        const newNodesSearchInput = flowNodesSearchInput.cloneNode(true);
+        flowNodesSearchInput.parentNode.replaceChild(newNodesSearchInput, flowNodesSearchInput);
+        
+        newNodesSearchInput.addEventListener("input", (e) => {
+          const searchTerm = e.target.value.toLowerCase();
+          filteredNodes = sampleNodes.filter(node => {
+            const nodeName = (lang === "ar" ? node.name : node.nameEn).toLowerCase();
+            const flowName = (lang === "ar" ? node.flowName : node.flowNameEn).toLowerCase();
+            return nodeName.includes(searchTerm) || flowName.includes(searchTerm);
+          });
+          currentNodePage = 1;
+          renderNodes(filteredNodes, currentNodePage);
+          renderPagination(flowNodesPagination, currentNodePage, Math.ceil(filteredNodes.length / 10), updateNodesPage);
+        });
+      }
+      
+      // Setup tab switching
+      if (flowTabFlows && flowTabNodes && flowFlowsContent && flowNodesContent) {
+        // Remove existing listeners to prevent duplicates
+        const newTabFlows = flowTabFlows.cloneNode(true);
+        const newTabNodes = flowTabNodes.cloneNode(true);
+        flowTabFlows.parentNode.replaceChild(newTabFlows, flowTabFlows);
+        flowTabNodes.parentNode.replaceChild(newTabNodes, flowTabNodes);
+        
+        newTabFlows.addEventListener("click", () => {
+          newTabFlows.classList.add("border-b-2", "border-blue-500");
+          newTabFlows.classList.remove("text-slate-500", "dark:text-slate-400");
+          newTabFlows.classList.add("text-slate-700", "dark:text-slate-300");
+          newTabNodes.classList.remove("border-b-2", "border-blue-500");
+          newTabNodes.classList.add("text-slate-500", "dark:text-slate-400");
+          newTabNodes.classList.remove("text-slate-700", "dark:text-slate-300");
+          flowFlowsContent.classList.remove("hidden");
+          flowNodesContent.classList.add("hidden");
+        });
+        
+        newTabNodes.addEventListener("click", () => {
+          newTabNodes.classList.add("border-b-2", "border-blue-500");
+          newTabNodes.classList.remove("text-slate-500", "dark:text-slate-400");
+          newTabNodes.classList.add("text-slate-700", "dark:text-slate-300");
+          newTabFlows.classList.remove("border-b-2", "border-blue-500");
+          newTabFlows.classList.add("text-slate-500", "dark:text-slate-400");
+          newTabFlows.classList.remove("text-slate-700", "dark:text-slate-300");
+          flowNodesContent.classList.remove("hidden");
+          flowFlowsContent.classList.add("hidden");
+        });
+      }
+      
+      // Function to close flow selection modal
+      const closeFlowSelectionModal = () => {
+        if (flowSelectionModal) {
+          flowSelectionModal.classList.add("hidden");
+        }
+      };
+      
+        // Setup modal close handlers
+        const flowSelectionModalClose = document.getElementById("flow-selection-modal-close");
+        const flowSelectionModalCancel = document.getElementById("flow-selection-modal-cancel");
+        
+        if (flowSelectionModalClose) {
+          flowSelectionModalClose.onclick = (e) => {
+            e.stopPropagation();
+            closeFlowSelectionModal();
+          };
+        }
+        
+        if (flowSelectionModalCancel) {
+          flowSelectionModalCancel.onclick = (e) => {
+            e.stopPropagation();
+            closeFlowSelectionModal();
+          };
+        }
+        
+        if (flowSelectionModal) {
+          flowSelectionModal.onclick = (e) => {
+            if (e.target === flowSelectionModal) {
+              closeFlowSelectionModal();
+            }
+          };
+        }
+      
+      // Render initial content
+      renderFlows(filteredFlows, currentFlowPage);
+      renderNodes(filteredNodes, currentNodePage);
+      renderPagination(flowFlowsPagination, currentFlowPage, Math.ceil(filteredFlows.length / 6), updateFlowsPage);
+      renderPagination(flowNodesPagination, currentNodePage, Math.ceil(filteredNodes.length / 10), updateNodesPage);
+      
+      // Show modal
+      flowSelectionModal.classList.remove("hidden");
+    });
+  }
+
+  // Pause/Resume recording
+  if (voicePauseBtn) {
+    voicePauseBtn.addEventListener("click", () => {
+      if (!mediaRecorder || !isRecording) return;
+
+      if (!isPaused) {
+        // Pause
+        if (mediaRecorder.state === "recording") {
+          mediaRecorder.pause();
+          isPaused = true;
+          pauseStartTime = Date.now();
+          stopTimer();
+          const icon = voicePauseBtn.querySelector("i");
+          if (icon) {
+            icon.className = "hgi-stroke hgi-play text-sm";
+          }
+          voicePauseBtn.setAttribute("data-title-ar", "استئناف");
+          voicePauseBtn.setAttribute("data-title-en", "Resume");
+        }
+      } else {
+        // Resume
+        if (mediaRecorder.state === "paused") {
+          mediaRecorder.resume();
+          isPaused = false;
+          if (pauseStartTime > 0) {
+            pausedDuration += Date.now() - pauseStartTime;
+            pauseStartTime = 0;
+          }
+          startTimer();
+          const icon = voicePauseBtn.querySelector("i");
+          if (icon) {
+            icon.className = "hgi-stroke hgi-pause text-sm";
+          }
+          voicePauseBtn.setAttribute("data-title-ar", "إيقاف مؤقت");
+          voicePauseBtn.setAttribute("data-title-en", "Pause");
+        }
+      }
+    });
+  }
+
+  // Cancel recording
+  if (voiceCancelBtn) {
+    voiceCancelBtn.addEventListener("click", () => {
+      // Set cancellation flag
+      isCancelled = true;
+      
+      // Stop recording if active
+      if (mediaRecorder) {
+        if (mediaRecorder.state === "recording" || mediaRecorder.state === "paused") {
+          mediaRecorder.stop();
+        }
+      }
+      
+      // Clear audio chunks immediately
+      audioChunks = [];
+      
+      // Stop audio stream
+      if (audioStream) {
+        audioStream.getTracks().forEach((track) => track.stop());
+        audioStream = null;
+      }
+      
+      // Reset UI
+      resetRecordingUI();
+      
+      console.log("Recording cancelled completely");
+    });
+  }
+
+  // Template Modal Setup
+  setupTemplateModal();
+}
+
+// Template Modal Manager
+function setupTemplateModal() {
+  const templateBtn = document.getElementById("template-btn");
+  const templateModal = document.getElementById("template-modal");
+  const templateModalClose = document.getElementById("template-modal-close");
+  const templateModalBack = document.getElementById("template-modal-back");
+  const templateModalCancel = document.getElementById("template-modal-cancel");
+  const templateModalSend = document.getElementById("template-modal-send");
+  const templateList = document.getElementById("template-list");
+  const templateSettings = document.getElementById("template-settings");
+  const templateSettingsContent = document.getElementById("template-settings-content");
+  const templateSettingsTitle = document.getElementById("template-settings-title");
+  const templateModalTitle = document.getElementById("template-modal-title");
+  const templatePreviewContent = document.getElementById("template-preview-content");
+
+  // Note: sampleFlows and sampleNodes are now defined in global scope above
+
+  if (!templateBtn || !templateModal) return;
+
+  // Sample templates data
+  const templates = [
+    {
+      id: 1,
+      name: "ترحيب العملاء",
+      category: "MARKETING",
+      description: "Send promotions or information about your products, services or business",
+      content: "مرحباً {{name}}، شكراً لاهتمامك بمنتجاتنا!",
+    },
+    {
+      id: 2,
+      name: "كود التحقق",
+      category: "AUTHENTICATION",
+      description: "Send codes to verify a transaction or login",
+      content: "كود التحقق الخاص بك هو: {{code}}",
+    },
+    {
+      id: 3,
+      name: "تحديث الطلب",
+      category: "UTILITY",
+      description: "Send messages about an existing order or account",
+      content: "تم تحديث حالة طلبك #{{order_id}} إلى: {{status}}",
+    },
+  ];
+
+  let selectedTemplate = null;
+
+  // Open modal
+  templateBtn.addEventListener("click", () => {
+    selectedTemplate = null;
+    showTemplatesList();
+    renderTemplates();
+    templateModal.classList.remove("opacity-0", "invisible");
+    templateModal.classList.add("opacity-100", "visible");
+    document.body.style.overflow = "hidden";
+  });
+
+  // Close modal
+  const closeModal = () => {
+    templateModal.classList.remove("opacity-100", "visible");
+    templateModal.classList.add("opacity-0", "invisible");
+    document.body.style.overflow = "";
+    selectedTemplate = null;
+    showTemplatesList();
+  };
+
+  // Show templates list (step 1)
+  const showTemplatesList = () => {
+    templateList.classList.remove("hidden");
+    templateSettings.classList.add("hidden");
+    templateModalBack.classList.add("hidden");
+    const lang = document.documentElement.getAttribute("lang") || "ar";
+    templateModalTitle.textContent = lang === "ar" ? "اختر قالب واتساب" : "Select WhatsApp Template";
+    templateModalTitle.setAttribute("data-text-ar", "اختر قالب واتساب");
+    templateModalTitle.setAttribute("data-text-en", "Select WhatsApp Template");
+  };
+
+  // Show template settings (step 2)
+  const showTemplateSettings = () => {
+    templateList.classList.add("hidden");
+    templateSettings.classList.remove("hidden");
+    templateModalBack.classList.remove("hidden");
+    const lang = document.documentElement.getAttribute("lang") || "ar";
+    templateModalTitle.textContent = lang === "ar" ? "إعدادات القالب" : "Template Settings";
+    templateModalTitle.setAttribute("data-text-ar", "إعدادات القالب");
+    templateModalTitle.setAttribute("data-text-en", "Template Settings");
+  };
+
+  // Back button handler
+  if (templateModalBack) {
+    templateModalBack.addEventListener("click", () => {
+      showTemplatesList();
+    });
+  }
+
+  templateModalClose.addEventListener("click", closeModal);
+  templateModalCancel.addEventListener("click", closeModal);
+
+  // Close on backdrop click
+  templateModal.addEventListener("click", (e) => {
+    if (e.target === templateModal) {
+      closeModal();
+    }
+  });
+
+  // Close on Escape key
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && templateModal.classList.contains("opacity-100")) {
+      closeModal();
+    }
+  });
+
+  // Render templates
+  function renderTemplates() {
+    const lang = document.documentElement.getAttribute("lang") || "ar";
+    templateList.innerHTML = templates
+      .map((template) => {
+        const categoryLabels = {
+          MARKETING: lang === "ar" ? "تسويق" : "Marketing",
+          AUTHENTICATION: lang === "ar" ? "مصادقة" : "Authentication",
+          UTILITY: lang === "ar" ? "أدوات" : "Utility",
+        };
+
+        return `
+          <div
+            class="template-item p-4 rounded-lg border border-slate-200 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors duration-150 ${
+              selectedTemplate?.id === template.id
+                ? "bg-blue-50 dark:bg-blue-900/20 border-blue-500 dark:border-blue-500"
+                : ""
+            }"
+            data-template-id="${template.id}"
+          >
+            <div class="flex items-start justify-between gap-3">
+              <div class="flex-1">
+                <div class="flex items-center gap-2 mb-1">
+                  <h4 class="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                    ${template.name}
+                  </h4>
+                  <span
+                    class="px-2 py-0.5 text-xs font-medium rounded text-white"
+                    style="background-color: #0090D6;"
+                  >
+                    ${categoryLabels[template.category] || template.category}
+                  </span>
+                </div>
+                <p class="text-xs text-slate-600 dark:text-slate-400 mb-2">
+                  ${template.description}
+                </p>
+                <p class="text-xs text-slate-500 dark:text-slate-500 italic">
+                  ${template.content}
+                </p>
+              </div>
+            </div>
+          </div>
+        `;
+      })
+      .join("");
+
+    // Add click handlers
+    templateList.querySelectorAll(".template-item").forEach((item) => {
+      item.addEventListener("click", () => {
+        const templateId = parseInt(item.getAttribute("data-template-id"));
+        selectedTemplate = templates.find((t) => t.id === templateId);
+        renderTemplateSettings();
+        showTemplateSettings();
+      });
+    });
+  }
+
+  // Render message preview
+  function renderMessagePreview() {
+    if (!selectedTemplate || !templatePreviewContent) return;
+    
+    const lang = document.documentElement.getAttribute("lang") || "ar";
+    const isMe = true; // Preview as sent message
+    const messageAlign = "justify-end";
+    const messageBg = "text-white";
+    const messageBgColor = 'style="background-color: #0090D6"';
+    const timeColor = "opacity-70";
+    const currentTime = new Date().toLocaleTimeString("ar-SA", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+    // Avatar HTML (same as in renderMessages)
+    const avatarHtml = `
+      <div class="message-avatar-container flex-shrink-0 relative" style="width: 24px; height: 24px;">
+        <img
+          src="https://ui-avatars.com/api/?name=${encodeURIComponent("أنت")}&size=24&background=0090D6&color=fff"
+          alt="أنت"
+          class="w-full h-full rounded-full object-cover cursor-pointer"
+          data-sender-name="أنت"
+        />
+      </div>
+    `;
+
+    // Get current settings values
+    const getSettingValue = (id) => {
+      const input = document.getElementById(id);
+      if (!input) return "";
+      
+      // For contenteditable divs (variable fields)
+      if (input.contentEditable === "true") {
+        // Extract variable keys from tags
+        const tags = input.querySelectorAll(".variable-tag");
+        if (tags.length > 0) {
+          return Array.from(tags).map(tag => tag.getAttribute("data-variable-key") ? `{{${tag.getAttribute("data-variable-key")}}}` : tag.textContent).join(" ");
+        }
+        return input.textContent.trim();
+      }
+      
+      // For regular inputs
+      if (input.value) return input.value;
+      
+      // Check for image preview
+      if (id === "template-header-image") {
+        const preview = document.getElementById("template-header-image-preview");
+        if (preview && preview.src && !preview.classList.contains("hidden")) {
+          return preview.src;
+        }
+      }
+      
+      return "";
+    };
+
+    let previewHTML = "";
+
+    switch (selectedTemplate.category) {
+      case "MARKETING":
+      case "UTILITY":
+        let headerImage = getSettingValue("template-header-image");
+        if (!headerImage || headerImage.trim() === "") {
+          headerImage = "https://via.placeholder.com/400x300?text=Header+Image";
+        }
+        const messageText = getSettingValue("template-message-text") || selectedTemplate.content || (lang === "ar" ? "نص الرسالة هنا..." : "Message text here...");
+        const variables = [];
+        for (let i = 1; i <= 10; i++) {
+          const varValue = getSettingValue(`template-variable-${i}`);
+          if (varValue) {
+            variables.push(varValue);
+          } else if (i <= 2) {
+            // Add sample variables for first 2
+            variables.push(lang === "ar" ? `متغير ${i}` : `Variable ${i}`);
+          }
+        }
+        const buttons = [];
+        for (let i = 1; i <= 10; i++) {
+          // Check for flow selected text
+          const flowSelected = document.getElementById(`template-button-${i}-flow-selected`);
+          let buttonValue = null;
+          
+          if (flowSelected && !flowSelected.classList.contains("hidden") && flowSelected.textContent) {
+            buttonValue = flowSelected.textContent.trim();
+          }
+          
+          if (buttonValue) {
+            buttons.push({ type: "flow", value: buttonValue });
+          } else if (i <= 3) {
+            // Add sample buttons for first 3
+            buttons.push({ type: "flow", value: lang === "ar" ? sampleFlows[i - 1]?.name || `تدفق ${i}` : sampleFlows[i - 1]?.nameEn || `Flow ${i}` });
+          }
+        }
+
+        // Always use image message format (same as renderMessages)
+        // Show placeholder icon if no image, or actual image if uploaded
+        const headerImagePreview = document.getElementById("template-header-image-preview");
+        const hasUploadedImage = headerImagePreview && headerImagePreview.src && !headerImagePreview.classList.contains("hidden");
+        const imageUrl = hasUploadedImage ? headerImagePreview.src : "";
+        
+        previewHTML = `
+          <div class="flex ${messageAlign} items-start gap-2 min-w-0 group">
+            <div class="max-w-[300px] min-w-[300px] ${messageBg} rounded-lg relative" ${messageBgColor} style="overflow: visible;">
+              <div class="relative overflow-hidden rounded-lg p-1.5">
+                ${imageUrl ? `
+                  <img
+                    src="${imageUrl}"
+                    alt="Header"
+                    class="w-full h-auto max-h-80 object-cover cursor-pointer media-preview-trigger rounded"
+                    data-media-type="image"
+                    data-media-url="${imageUrl}"
+                    onerror="this.src='https://via.placeholder.com/400x300?text=Image+Error'"
+                  />
+                ` : `
+                  <div class="w-full h-48 bg-slate-100 dark:bg-slate-700/50 rounded flex items-center justify-center">
+                    <i class="hgi-stroke hgi-image-01 text-4xl text-slate-400 dark:text-slate-500"></i>
+                  </div>
+                `}
+                ${messageText ? `<p class="text-sm px-4 py-2">${messageText}</p>` : ""}
+                ${variables.length > 0 ? `
+                  <div class="px-4 pb-2 space-y-1">
+                    ${variables.map(v => `<p class="text-xs opacity-90">${v}</p>`).join("")}
+                  </div>
+                ` : ""}
+              </div>
+              ${buttons.length > 0 ? `
+                <div class="px-4 pb-2 space-y-2">
+                  ${buttons.slice(0, 2).map(btn => `
+                    <button class="w-full px-3 py-2 text-xs font-medium bg-white/20 hover:bg-white/30 rounded-lg transition-colors">
+                      ${btn.value}
+                    </button>
+                  `).join("")}
+                  ${buttons.length > 2 ? `
+                    <div class="relative">
+                      <button
+                        id="template-buttons-menu-btn"
+                        class="w-full px-3 py-2 text-xs font-medium bg-white/20 hover:bg-white/30 rounded-lg transition-colors flex items-center justify-between"
+                      >
+                        <span>${lang === "ar" ? "القائمة" : "Menu"}</span>
+                        <i class="hgi-stroke hgi-arrow-down text-xs"></i>
+                      </button>
+                      <div
+                        id="template-buttons-menu"
+                        class="hidden absolute bottom-full mb-2 left-0 right-0 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 p-2 space-y-1 z-10 max-h-48 overflow-y-auto"
+                      >
+                        ${buttons.slice(2).map(btn => `
+                          <button class="w-full px-3 py-2 text-xs font-medium bg-slate-50 dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 rounded-lg transition-colors text-start">
+                            ${btn.value}
+                          </button>
+                        `).join("")}
+                      </div>
+                    </div>
+                  ` : ""}
+                </div>
+              ` : ""}
+              <div class="px-4 pb-2 flex items-center justify-between">
+                <div class="flex items-center gap-1.5">
+                  <span class="text-xs ${timeColor}">${currentTime}</span>
+                </div>
+              </div>
+            </div>
+            ${avatarHtml}
+          </div>
+        `;
+        break;
+
+      case "AUTHENTICATION":
+        const code = getSettingValue("template-verification-code") || "123456";
+        previewHTML = `
+          <div class="flex ${messageAlign} items-start gap-2 min-w-0 group">
+            <div class="max-w-[85%] sm:max-w-[75%] md:max-w-[65%] lg:max-w-[60%] min-w-0 ${messageBg} rounded-lg relative" ${messageBgColor} style="word-break: break-word; overflow-wrap: break-word; overflow: visible;">
+              <div class="px-4 pt-3">
+                <p class="text-sm break-words">${lang === "ar" ? "كود التحقق الخاص بك هو:" : "Your verification code is:"}</p>
+                <p class="text-2xl font-bold mt-2">${code}</p>
+              </div>
+              <div class="px-4 pb-2 flex items-center justify-between">
+                <div class="flex items-center gap-1.5">
+                  <span class="text-xs ${timeColor}">${currentTime}</span>
+                </div>
+              </div>
+            </div>
+            ${avatarHtml}
+          </div>
+        `;
+        break;
+
+
+      default:
+        previewHTML = `
+          <div class="flex ${messageAlign} items-start gap-2 min-w-0 group">
+            <div class="max-w-[85%] sm:max-w-[75%] md:max-w-[65%] lg:max-w-[60%] min-w-0 ${messageBg} rounded-lg relative" ${messageBgColor} style="word-break: break-word; overflow-wrap: break-word; overflow: visible;">
+              <div class="px-4 pt-3">
+                <p class="text-sm break-words">${selectedTemplate.content}</p>
+              </div>
+              <div class="px-4 pb-2 flex items-center justify-between">
+                <div class="flex items-center gap-1.5">
+                  <span class="text-xs ${timeColor}">${currentTime}</span>
+                </div>
+              </div>
+            </div>
+            ${avatarHtml}
+          </div>
+        `;
+    }
+
+    templatePreviewContent.innerHTML = previewHTML;
+  }
+
+  // Render template settings
+  function renderTemplateSettings() {
+    if (!selectedTemplate) {
+      templateSettings.classList.add("hidden");
+      return;
+    }
+
+    templateSettings.classList.remove("hidden");
+    const lang = document.documentElement.getAttribute("lang") || "ar";
+
+    let settingsHTML = "";
+
+    switch (selectedTemplate.category) {
+      case "MARKETING":
+      case "UTILITY":
+        // Header Image
+        settingsHTML = `
+          <div class="space-y-4">
+            <div>
+              <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                ${lang === "ar" ? "صورة Header" : "Header Image"}
+              </label>
+              <div
+                id="template-header-image-container"
+                class="w-full min-h-[120px] border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center cursor-pointer hover:border-blue-500 dark:hover:border-blue-400 transition-colors duration-150 relative overflow-hidden"
+              >
+                <input
+                  type="file"
+                  id="template-header-image-input"
+                  accept="image/*"
+                  class="hidden"
+                />
+                <div id="template-header-image-placeholder" class="text-center p-4">
+                  <i class="hgi-stroke hgi-image text-3xl text-slate-400 dark:text-slate-500 mb-2 block"></i>
+                  <p class="text-xs text-slate-500 dark:text-slate-400">
+                    ${lang === "ar" ? "اختر صورة" : "Choose image"}
+                  </p>
+                </div>
+                <img
+                  id="template-header-image-preview"
+                  class="hidden w-full h-auto max-h-[120px] object-contain"
+                  alt="Preview"
+                />
+              </div>
+            </div>
+
+            <!-- Variables -->
+            <div>
+              <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-2">
+                ${lang === "ar" ? "حقول المتغيرات" : "Variable Fields"}
+              </label>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        `;
+        for (let i = 1; i <= 10; i++) {
+          settingsHTML += `
+                <div class="relative">
+                  <label class="block text-xs text-slate-600 dark:text-slate-400 mb-1">
+                    ${lang === "ar" ? `متغير ${i}` : `Variable ${i}`}
+                  </label>
+                  <div class="relative">
+                    <div
+                      id="template-variable-${i}"
+                      contenteditable="true"
+                      class="w-full min-h-[38px] px-3 py-2 pe-10 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      data-placeholder="${lang === "ar" ? `أدخل قيمة المتغير ${i}` : `Enter variable ${i} value`}"
+                      style="word-break: break-word;"
+                    ></div>
+                    <button
+                      type="button"
+                      id="template-variable-${i}-btn"
+                      class="absolute end-2 top-1/2 -translate-y-1/2 flex items-center justify-center w-7 h-7 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors duration-150"
+                      style="color: #003e5c; background-color: #dbf3ff;"
+                      data-title-ar="متغير"
+                      data-title-en="Variable"
+                    >
+                      <i class="hgi-stroke hgi-code-simple text-sm"></i>
+                    </button>
+                  </div>
+                </div>
+          `;
+        }
+        settingsHTML += `
+              </div>
+            </div>
+
+            <!-- Buttons -->
+            <div>
+              <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-2">
+                ${lang === "ar" ? "الأزرار" : "Buttons"}
+              </label>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        `;
+        for (let i = 1; i <= 10; i++) {
+          settingsHTML += `
+                <div class="p-3 border border-slate-200 dark:border-slate-700 rounded-lg">
+                  <label class="block text-xs text-slate-600 dark:text-slate-400 mb-1">
+                    ${lang === "ar" ? `زر ${i}` : `Button ${i}`}
+                  </label>
+                  <div
+                    id="template-button-${i}-flow-container"
+                    class="w-full min-h-[80px] border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center cursor-pointer hover:border-blue-500 dark:hover:border-blue-400 transition-colors duration-150 relative overflow-hidden"
+                  >
+                    <div id="template-button-${i}-flow-placeholder" class="text-center p-2">
+                      <i class="hgi-stroke hgi-flow-chart text-xl text-slate-400 dark:text-slate-500 mb-1 block"></i>
+                      <p class="text-xs text-slate-500 dark:text-slate-400">
+                        ${lang === "ar" ? "اختر إجراء" : "Choose action"}
+                      </p>
+                    </div>
+                    <div
+                      id="template-button-${i}-flow-selected"
+                      class="hidden w-full p-2 text-xs text-slate-700 dark:text-slate-300"
+                    ></div>
+                  </div>
+                </div>
+          `;
+        }
+        settingsHTML += `
+              </div>
+            </div>
+          </div>
+        `;
+        break;
+
+      case "AUTHENTICATION":
+        settingsHTML = `
+          <div class="space-y-3">
+            <div>
+              <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                ${lang === "ar" ? "كود التحقق" : "Verification Code"}
+              </label>
+              <input
+                type="text"
+                id="template-verification-code"
+                class="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="${lang === "ar" ? "أدخل كود التحقق" : "Enter verification code"}"
+                maxlength="6"
+              />
+            </div>
+          </div>
+        `;
+        break;
+
+
+
+      default:
+        settingsHTML = `
+          <p class="text-sm text-slate-600 dark:text-slate-400">
+            ${lang === "ar" ? "لا توجد إعدادات خاصة لهذا القالب" : "No special settings for this template"}
+          </p>
+        `;
+    }
+
+    templateSettingsContent.innerHTML = settingsHTML;
+    
+    // Setup header image upload
+    const headerImageContainer = document.getElementById("template-header-image-container");
+    const headerImageInput = document.getElementById("template-header-image-input");
+    const headerImagePreview = document.getElementById("template-header-image-preview");
+    const headerImagePlaceholder = document.getElementById("template-header-image-placeholder");
+    
+    if (headerImageContainer && headerImageInput && headerImagePreview && headerImagePlaceholder) {
+      headerImageContainer.addEventListener("click", () => {
+        headerImageInput.click();
+      });
+      
+      headerImageInput.addEventListener("change", (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            const imageUrl = event.target.result;
+            headerImagePreview.src = imageUrl;
+            headerImagePreview.classList.remove("hidden");
+            headerImagePlaceholder.classList.add("hidden");
+            renderMessagePreview();
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+    }
+
+    // Setup variable buttons for each variable field (for all template types)
+    for (let i = 1; i <= 10; i++) {
+      const varBtn = document.getElementById(`template-variable-${i}-btn`);
+      const varInput = document.getElementById(`template-variable-${i}`);
+      
+      if (varBtn && varInput) {
+        let varDropdown = null;
+        let isVarDropdownOpen = false;
+        
+        // Function to get variable type, color, and icon
+        const getVariableTypeAndColor = (key, name) => {
+          // First, try to get type from variable-item element
+          const variablesList = document.getElementById("variables-list");
+          if (variablesList) {
+            const variableItem = variablesList.querySelector(`[data-key="${key}"]`);
+            if (variableItem) {
+              const valueDisplay = variableItem.querySelector(".variable-value-display");
+              if (valueDisplay) {
+                const value = valueDisplay.textContent.trim();
+                
+                // Check value type
+                if (value === "true" || value === "false") {
+                  return { type: "boolean", color: "bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 border-slate-400 dark:border-slate-600", icon: "hgi-structure-check" };
+                }
+                if (!isNaN(value) && value !== "" && !value.includes("-") && !value.includes(":")) {
+                  return { type: "number", color: "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-300 dark:border-green-700", icon: "hgi-hashtag" };
+                }
+                // Check for datetime (date and time together)
+                if (/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}$/.test(value) || /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(value) || /^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}$/.test(value)) {
+                  return { type: "datetime", color: "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border-indigo-300 dark:border-indigo-700", icon: "hgi-date-time" };
+                }
+                if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+                  return { type: "date", color: "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 border-orange-300 dark:border-orange-700", icon: "hgi-calendar-04" };
+                }
+                if (/^\d{2}:\d{2}:\d{2}$/.test(value) || /^\d{2}:\d{2}$/.test(value)) {
+                  return { type: "time", color: "bg-pink-100 dark:bg-pink-900/30 text-pink-700 dark:text-pink-300 border-pink-300 dark:border-pink-700", icon: "hgi-time-02" };
+                }
+                if (value.startsWith("{") || value.startsWith("[")) {
+                  return { type: "json", color: "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 border-yellow-300 dark:border-yellow-700", icon: "hgi-code" };
+                }
+              }
+            }
+          }
+          
+          // Fallback: check key and name
+          const keyLower = key.toLowerCase();
+          const nameLower = name.toLowerCase();
+          
+          // Check for type indicators in key or name (order matters - more specific first)
+          if (keyLower.includes("json") || keyLower.includes("object") || nameLower.includes("json") || nameLower.includes("object")) {
+            return { type: "json", color: "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 border-yellow-300 dark:border-yellow-700", icon: "hgi-code" };
+          }
+          // Check for datetime (date and time together) - must be before date and time checks
+          if ((keyLower.includes("datetime") || keyLower.includes("date_time") || keyLower.includes("timestamp") || keyLower.includes("login") || keyLower.includes("created") || keyLower.includes("updated") || keyLower.includes("modified")) || 
+              (nameLower.includes("تاريخ ووقت") || nameLower.includes("datetime") || nameLower.includes("timestamp"))) {
+            return { type: "datetime", color: "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border-indigo-300 dark:border-indigo-700", icon: "hgi-date-time" };
+          }
+          if (keyLower.includes("date") || nameLower.includes("تاريخ") || nameLower.includes("date")) {
+            return { type: "date", color: "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 border-orange-300 dark:border-orange-700", icon: "hgi-calendar-04" };
+          }
+          if (keyLower.includes("time") || nameLower.includes("وقت") || nameLower.includes("time")) {
+            return { type: "time", color: "bg-pink-100 dark:bg-pink-900/30 text-pink-700 dark:text-pink-300 border-pink-300 dark:border-pink-700", icon: "hgi-time-02" };
+          }
+          if (keyLower.includes("boolean") || keyLower.includes("bool") || nameLower.includes("منطقي") || nameLower.includes("boolean") || nameLower.includes("bool") || keyLower.startsWith("is") || keyLower.startsWith("has")) {
+            return { type: "boolean", color: "bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 border-slate-400 dark:border-slate-600", icon: "hgi-structure-check" };
+          }
+          if (keyLower.includes("number") || keyLower.includes("num") || keyLower.includes("int") || keyLower.includes("count") || keyLower.includes("age") || nameLower.includes("رقم") || nameLower.includes("number") || nameLower.includes("num")) {
+            return { type: "number", color: "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-300 dark:border-green-700", icon: "hgi-hashtag" };
+          }
+          
+          // Default: text
+          return { type: "text", color: "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border-purple-300 dark:border-purple-700", icon: "hgi-text" };
+        };
+        
+        // Function to insert variable as tag
+        const insertVariableTag = (key, name) => {
+          varInput.focus();
+          
+          const selection = window.getSelection();
+          let range;
+          
+          // Try to get existing selection
+          if (selection.rangeCount > 0) {
+            range = selection.getRangeAt(0);
+            // Check if selection is within varInput
+            let container = range.commonAncestorContainer;
+            if (container.nodeType === Node.TEXT_NODE) {
+              container = container.parentNode;
+            }
+            if (!varInput.contains(container)) {
+              // Selection is outside, create new range at end of varInput
+              range = document.createRange();
+              if (varInput.childNodes.length > 0) {
+                const lastNode = varInput.childNodes[varInput.childNodes.length - 1];
+                if (lastNode.nodeType === Node.TEXT_NODE) {
+                  range.setStart(lastNode, lastNode.textContent.length);
+                } else {
+                  range.setStartAfter(lastNode);
+                }
+              } else {
+                range.setStart(varInput, 0);
+              }
+              range.collapse(true);
+            }
+          } else {
+            // No selection, create range at end
+            range = document.createRange();
+            if (varInput.childNodes.length > 0) {
+              const lastNode = varInput.childNodes[varInput.childNodes.length - 1];
+              if (lastNode.nodeType === Node.TEXT_NODE) {
+                range.setStart(lastNode, lastNode.textContent.length);
+              } else {
+                range.setStartAfter(lastNode);
+              }
+            } else {
+              range.setStart(varInput, 0);
+            }
+            range.collapse(true);
+          }
+          
+          const { color, icon } = getVariableTypeAndColor(key, name);
+          const tag = document.createElement("span");
+          tag.className = `inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium border ${color} variable-tag`;
+          tag.contentEditable = "false";
+          tag.setAttribute("data-variable-key", key);
+          tag.innerHTML = `<i class="hgi-stroke ${icon} text-xs"></i><span>{{${key}}}</span>`;
+          
+          // Add space before if needed
+          const startContainer = range.startContainer;
+          const hasTextBefore = startContainer.nodeType === Node.TEXT_NODE && range.startOffset > 0 && startContainer.textContent.trim().length > 0;
+          const hasNodeBefore = startContainer !== varInput && range.startOffset === 0 && startContainer.previousSibling;
+          
+          if (hasTextBefore || hasNodeBefore) {
+            const space = document.createTextNode(" ");
+            range.insertNode(space);
+            range.setStartAfter(space);
+          }
+          
+          range.insertNode(tag);
+          
+          // Set cursor after tag
+          const newRange = document.createRange();
+          newRange.setStartAfter(tag);
+          newRange.collapse(true);
+          selection.removeAllRanges();
+          selection.addRange(newRange);
+          
+          updatePlaceholder();
+        };
+        
+        // Setup placeholder for contenteditable
+        const updatePlaceholder = () => {
+          const hasContent = varInput.textContent.trim() !== "" || varInput.querySelector(".variable-tag");
+          if (!hasContent) {
+            varInput.setAttribute("data-empty", "true");
+          } else {
+            varInput.removeAttribute("data-empty");
+          }
+        };
+        
+        // Handle backspace to delete tags
+        varInput.addEventListener("keydown", (e) => {
+          if (e.key === "Backspace") {
+            const selection = window.getSelection();
+            if (selection.rangeCount > 0) {
+              const range = selection.getRangeAt(0);
+              const tag = range.startContainer.parentElement?.closest(".variable-tag");
+              if (tag && range.collapsed && range.startOffset === 0) {
+                e.preventDefault();
+                tag.remove();
+                updatePlaceholder();
+                renderMessagePreview();
+              }
+            }
+          }
+        });
+        
+        varInput.addEventListener("input", () => {
+          updatePlaceholder();
+          renderMessagePreview();
+        });
+        varInput.addEventListener("focus", updatePlaceholder);
+        varInput.addEventListener("blur", updatePlaceholder);
+        updatePlaceholder();
+        
+        const createVarDropdown = () => {
+          if (varDropdown) return varDropdown;
+          
+          const variablesList = document.getElementById("variables-list");
+          if (!variablesList) return null;
+          
+          const systemFields = [];
+          const customFields = [];
+          
+          variablesList.querySelectorAll(".variable-item").forEach((item) => {
+            const key = item.getAttribute("data-key");
+            const nameSpan = item.querySelector("span.text-xs.font-semibold");
+            const name = nameSpan ? nameSpan.textContent.trim() : key;
+            const typeAttr = item.getAttribute("data-type");
+            
+            const variable = { key, name, type: typeAttr };
+            if (key && key.startsWith("system_")) {
+              systemFields.push(variable);
+            } else {
+              customFields.push(variable);
+            }
+          });
+          
+          varDropdown = document.createElement("div");
+          varDropdown.className = "absolute w-64 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden z-[1000]";
+          varDropdown.style.display = "none";
+          varDropdown.style.bottom = "100%";
+          varDropdown.style.marginBottom = "8px";
+          varDropdown.style.right = "0";
+          
+          const searchBox = document.createElement("div");
+          searchBox.className = "p-2 border-b border-slate-200 dark:border-slate-700";
+          const searchInput = document.createElement("input");
+          searchInput.type = "text";
+          searchInput.placeholder = lang === "ar" ? "بحث..." : "Search...";
+          searchInput.className = "w-full px-3 py-1.5 text-sm bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500";
+          searchBox.appendChild(searchInput);
+          
+          const dropdownContent = document.createElement("div");
+          dropdownContent.className = "max-h-80 overflow-y-auto";
+          
+          const renderVars = (searchTerm = "") => {
+            dropdownContent.innerHTML = "";
+            const searchLower = searchTerm.toLowerCase();
+            const filteredSystem = systemFields.filter(v => v.name.toLowerCase().includes(searchLower) || v.key.toLowerCase().includes(searchLower));
+            const filteredCustom = customFields.filter(v => v.name.toLowerCase().includes(searchLower) || v.key.toLowerCase().includes(searchLower));
+            
+            if (filteredSystem.length > 0) {
+              const header = document.createElement("div");
+              header.className = "px-3 py-2 text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-700/50 sticky top-0";
+              header.textContent = "System Fields";
+              dropdownContent.appendChild(header);
+              filteredSystem.forEach(v => {
+                const item = document.createElement("button");
+                item.type = "button";
+                item.className = "w-full px-3 py-2 text-sm text-left text-slate-900 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700";
+                item.textContent = v.name;
+                item.addEventListener("click", () => {
+                  insertVariableTag(v.key, v.name);
+                  varDropdown.style.display = "none";
+                  isVarDropdownOpen = false;
+                  updatePlaceholder();
+                  renderMessagePreview();
+                });
+                dropdownContent.appendChild(item);
+              });
+            }
+            
+            if (filteredCustom.length > 0) {
+              const header = document.createElement("div");
+              header.className = "px-3 py-2 text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-700/50 sticky top-0";
+              header.textContent = "Custom User Fields";
+              dropdownContent.appendChild(header);
+              filteredCustom.forEach(v => {
+                const item = document.createElement("button");
+                item.type = "button";
+                item.className = "w-full px-3 py-2 text-sm text-left text-slate-900 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700";
+                item.textContent = v.name;
+                item.addEventListener("click", () => {
+                  insertVariableTag(v.key, v.name);
+                  varDropdown.style.display = "none";
+                  isVarDropdownOpen = false;
+                  updatePlaceholder();
+                  renderMessagePreview();
+                });
+                dropdownContent.appendChild(item);
+              });
+            }
+          };
+          
+          renderVars();
+          searchInput.addEventListener("input", (e) => renderVars(e.target.value));
+          
+          varDropdown.appendChild(searchBox);
+          varDropdown.appendChild(dropdownContent);
+          
+          varBtn.parentElement.style.position = "relative";
+          varBtn.parentElement.appendChild(varDropdown);
+          
+          return varDropdown;
+        };
+        
+        varBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          if (!varDropdown) {
+            createVarDropdown();
+          }
+          if (varDropdown) {
+            isVarDropdownOpen = !isVarDropdownOpen;
+            varDropdown.style.display = isVarDropdownOpen ? "block" : "none";
+          }
+        });
+        
+        document.addEventListener("click", (e) => {
+          if (isVarDropdownOpen && varDropdown && !varDropdown.contains(e.target) && !varBtn.contains(e.target)) {
+            varDropdown.style.display = "none";
+            isVarDropdownOpen = false;
+          }
+        });
+      }
+    }
+
+    // Setup flow selection for buttons (MARKETING/UTILITY)
+    if (selectedTemplate.category === "MARKETING" || selectedTemplate.category === "UTILITY") {
+      // Get flow selection modal elements
+      const flowSelectionModal = document.getElementById("flow-selection-modal");
+      const flowSelectionModalClose = document.getElementById("flow-selection-modal-close");
+      const flowSelectionModalCancel = document.getElementById("flow-selection-modal-cancel");
+      const flowTabFlows = document.getElementById("flow-selection-tab-flows");
+      const flowTabNodes = document.getElementById("flow-selection-tab-nodes");
+      const flowFlowsContent = document.getElementById("flow-selection-flows-content");
+      const flowNodesContent = document.getElementById("flow-selection-nodes-content");
+      const flowFlowsGrid = document.getElementById("flow-selection-flows-grid");
+      const flowNodesList = document.getElementById("flow-selection-nodes-list");
+      const flowSearchInput = document.getElementById("flow-selection-search");
+      const flowFlowsPagination = document.getElementById("flow-selection-flows-pagination");
+      const flowNodesPagination = document.getElementById("flow-selection-nodes-pagination");
+      
+      // Pagination state
+      let currentFlowPage = 1;
+      let currentNodePage = 1;
+      const flowsPerPage = 6;
+      const nodesPerPage = 10;
+      let filteredFlows = [...sampleFlows];
+      let filteredNodes = [...sampleNodes];
+      
+      // Helper functions for pagination
+      const updateFlowsPage = (page) => {
+        currentFlowPage = page;
+        renderFlows(filteredFlows, currentFlowPage);
+        renderPagination(flowFlowsPagination, currentFlowPage, Math.ceil(filteredFlows.length / flowsPerPage), updateFlowsPage);
+      };
+      
+      const updateNodesPage = (page) => {
+        currentNodePage = page;
+        renderNodes(filteredNodes, currentNodePage);
+        renderPagination(flowNodesPagination, currentNodePage, Math.ceil(filteredNodes.length / nodesPerPage), updateNodesPage);
+      };
+      
+      // Function to render flows with pagination
+      const renderFlows = (flows, page = 1) => {
+        if (!flowFlowsGrid) return;
+        
+        const startIndex = (page - 1) * flowsPerPage;
+        const endIndex = startIndex + flowsPerPage;
+        const paginatedFlows = flows.slice(startIndex, endIndex);
+        
+        flowFlowsGrid.innerHTML = "";
+        
+        if (paginatedFlows.length === 0) {
+          flowFlowsGrid.innerHTML = `
+            <div class="text-center py-8 text-slate-500 dark:text-slate-400">
+              ${lang === "ar" ? "لا توجد تدفقات" : "No flows found"}
+            </div>
+          `;
+          return;
+        }
+        
+        const grid = document.createElement("div");
+        grid.className = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4";
+        
+        paginatedFlows.forEach(flow => {
+          const flowCard = document.createElement("div");
+          flowCard.className = "p-4 border border-slate-200 dark:border-slate-700 rounded-lg hover:border-blue-500 dark:hover:border-blue-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors duration-150 cursor-pointer";
+          flowCard.dataset.flowId = flow.id;
+          flowCard.innerHTML = `
+            <div class="flex items-center gap-3">
+              <div class="flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center" style="background-color: #dbf3ff;">
+                <i class="hgi-stroke hgi-flow-chart text-lg" style="color: #003e5c;"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
+                  ${lang === "ar" ? flow.name : flow.nameEn}
+                </p>
+              </div>
+            </div>
+          `;
+          
+          flowCard.addEventListener("click", () => {
+            selectFlow(flow);
+          });
+          
+          grid.appendChild(flowCard);
+        });
+        
+        flowFlowsGrid.appendChild(grid);
+      };
+      
+      // Function to render nodes with pagination
+      const renderNodes = (nodes, page = 1) => {
+        if (!flowNodesList) return;
+        
+        const startIndex = (page - 1) * nodesPerPage;
+        const endIndex = startIndex + nodesPerPage;
+        const paginatedNodes = nodes.slice(startIndex, endIndex);
+        
+        flowNodesList.innerHTML = "";
+        
+        if (paginatedNodes.length === 0) {
+          flowNodesList.innerHTML = `
+            <div class="text-center py-8 text-slate-500 dark:text-slate-400">
+              ${lang === "ar" ? "لا توجد عقد" : "No nodes found"}
+            </div>
+          `;
+          return;
+        }
+        
+        paginatedNodes.forEach(node => {
+          const nodeRow = document.createElement("div");
+          nodeRow.className = "flex items-center justify-between p-3 border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors duration-150";
+          nodeRow.innerHTML = `
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-3">
+                <div class="flex-shrink-0">
+                  <i class="hgi-stroke hgi-node text-lg text-slate-400 dark:text-slate-500"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium text-slate-900 dark:text-slate-100">
+                    ${lang === "ar" ? node.name : node.nameEn}
+                  </p>
+                  <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    ${lang === "ar" ? node.flowName : node.flowNameEn}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <button
+              class="px-3 py-1.5 text-xs font-medium text-white rounded-lg transition-colors duration-150 hover:opacity-90"
+              style="background-color: #0090D6;"
+              data-node-id="${node.id}"
+              data-text-ar="اختر"
+              data-text-en="Select"
+            >
+              ${lang === "ar" ? "اختر" : "Select"}
+            </button>
+          `;
+          
+          const selectBtn = nodeRow.querySelector("button");
+          selectBtn.addEventListener("click", () => {
+            selectNode(node);
+          });
+          
+          flowNodesList.appendChild(nodeRow);
+        });
+      };
+      
+      // Function to render pagination
+      const renderPagination = (container, currentPage, totalPages, onPageChange) => {
+        if (!container) return;
+        
+        container.innerHTML = "";
+        
+        if (totalPages <= 1) return;
+        
+        const paginationDiv = document.createElement("div");
+        paginationDiv.className = "flex items-center justify-between w-full";
+        
+        // Previous button
+        const prevBtn = document.createElement("button");
+        prevBtn.className = `px-3 py-1.5 text-sm font-medium rounded-lg transition-colors duration-150 ${
+          currentPage === 1
+            ? "text-slate-400 dark:text-slate-600 cursor-not-allowed"
+            : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+        }`;
+        prevBtn.textContent = lang === "ar" ? "السابق" : "Previous";
+        prevBtn.disabled = currentPage === 1;
+        prevBtn.addEventListener("click", () => {
+          if (currentPage > 1) {
+            onPageChange(currentPage - 1);
+          }
+        });
+        
+        // Page numbers
+        const pageNumbers = document.createElement("div");
+        pageNumbers.className = "flex items-center gap-1";
+        
+        const maxVisible = 5;
+        let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+        let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+        
+        if (endPage - startPage < maxVisible - 1) {
+          startPage = Math.max(1, endPage - maxVisible + 1);
+        }
+        
+        if (startPage > 1) {
+          const firstBtn = document.createElement("button");
+          firstBtn.className = "px-2 py-1 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors duration-150";
+          firstBtn.textContent = "1";
+          firstBtn.addEventListener("click", () => onPageChange(1));
+          pageNumbers.appendChild(firstBtn);
+          
+          if (startPage > 2) {
+            const ellipsis = document.createElement("span");
+            ellipsis.className = "px-2 text-slate-400 dark:text-slate-600";
+            ellipsis.textContent = "...";
+            pageNumbers.appendChild(ellipsis);
+          }
+        }
+        
+        for (let i = startPage; i <= endPage; i++) {
+          const pageBtn = document.createElement("button");
+          pageBtn.className = `px-2 py-1 text-sm font-medium rounded transition-colors duration-150 ${
+            i === currentPage
+              ? "bg-blue-500 text-white"
+              : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+          }`;
+          pageBtn.textContent = i;
+          pageBtn.addEventListener("click", () => onPageChange(i));
+          pageNumbers.appendChild(pageBtn);
+        }
+        
+        if (endPage < totalPages) {
+          if (endPage < totalPages - 1) {
+            const ellipsis = document.createElement("span");
+            ellipsis.className = "px-2 text-slate-400 dark:text-slate-600";
+            ellipsis.textContent = "...";
+            pageNumbers.appendChild(ellipsis);
+          }
+          
+          const lastBtn = document.createElement("button");
+          lastBtn.className = "px-2 py-1 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors duration-150";
+          lastBtn.textContent = totalPages;
+          lastBtn.addEventListener("click", () => onPageChange(totalPages));
+          pageNumbers.appendChild(lastBtn);
+        }
+        
+        // Next button
+        const nextBtn = document.createElement("button");
+        nextBtn.className = `px-3 py-1.5 text-sm font-medium rounded-lg transition-colors duration-150 ${
+          currentPage === totalPages
+            ? "text-slate-400 dark:text-slate-600 cursor-not-allowed"
+            : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+        }`;
+        nextBtn.textContent = lang === "ar" ? "التالي" : "Next";
+        nextBtn.disabled = currentPage === totalPages;
+        nextBtn.addEventListener("click", () => {
+          if (currentPage < totalPages) {
+            onPageChange(currentPage + 1);
+          }
+        });
+        
+        // Page info
+        const pageInfo = document.createElement("div");
+        pageInfo.className = "text-xs text-slate-500 dark:text-slate-400";
+        const totalItems = container.id.includes("flows") ? filteredFlows.length : filteredNodes.length;
+        const startItem = (currentPage - 1) * (container.id.includes("flows") ? flowsPerPage : nodesPerPage) + 1;
+        const endItem = Math.min(currentPage * (container.id.includes("flows") ? flowsPerPage : nodesPerPage), totalItems);
+        pageInfo.textContent = `${startItem}-${endItem} ${lang === "ar" ? "من" : "of"} ${totalItems}`;
+        
+        paginationDiv.appendChild(prevBtn);
+        paginationDiv.appendChild(pageNumbers);
+        paginationDiv.appendChild(nextBtn);
+        paginationDiv.appendChild(pageInfo);
+        
+        container.appendChild(paginationDiv);
+      };
+      
+      // Function to select flow
+      const selectFlow = (flow) => {
+        const source = flowSelectionModal.dataset.source;
+        const buttonIndex = flowSelectionModal.dataset.buttonIndex;
+        
+        if (source === "message") {
+          // Insert into message input
+          const messageInput = document.getElementById("message-input");
+          if (messageInput) {
+            const flowText = `{{flow:${flow.id}}}`;
+            const cursorPos = messageInput.selectionStart || messageInput.value.length;
+            const textBefore = messageInput.value.substring(0, cursorPos);
+            const textAfter = messageInput.value.substring(cursorPos);
+            messageInput.value = textBefore + flowText + textAfter;
+            messageInput.setSelectionRange(cursorPos + flowText.length, cursorPos + flowText.length);
+            messageInput.focus();
+          }
+        } else {
+          // Template button
+          const flowPlaceholder = document.getElementById(`template-button-${buttonIndex}-flow-placeholder`);
+          const flowSelected = document.getElementById(`template-button-${buttonIndex}-flow-selected`);
+          
+          if (flowPlaceholder) flowPlaceholder.classList.add("hidden");
+          if (flowSelected) {
+            flowSelected.classList.remove("hidden");
+            flowSelected.textContent = lang === "ar" ? flow.name : flow.nameEn;
+          }
+          
+          renderMessagePreview();
+        }
+        
+        closeFlowSelectionModal();
+      };
+      
+      // Function to select node
+      const selectNode = (node) => {
+        const source = flowSelectionModal.dataset.source;
+        const buttonIndex = flowSelectionModal.dataset.buttonIndex;
+        
+        if (source === "message") {
+          // Insert into message input
+          const messageInput = document.getElementById("message-input");
+          if (messageInput) {
+            const nodeText = `{{node:${node.id}}}`;
+            const cursorPos = messageInput.selectionStart || messageInput.value.length;
+            const textBefore = messageInput.value.substring(0, cursorPos);
+            const textAfter = messageInput.value.substring(cursorPos);
+            messageInput.value = textBefore + nodeText + textAfter;
+            messageInput.setSelectionRange(cursorPos + nodeText.length, cursorPos + nodeText.length);
+            messageInput.focus();
+          }
+        } else {
+          // Template button
+          const flowPlaceholder = document.getElementById(`template-button-${buttonIndex}-flow-placeholder`);
+          const flowSelected = document.getElementById(`template-button-${buttonIndex}-flow-selected`);
+          
+          if (flowPlaceholder) flowPlaceholder.classList.add("hidden");
+          if (flowSelected) {
+            flowSelected.classList.remove("hidden");
+            flowSelected.textContent = lang === "ar" ? node.name : node.nameEn;
+          }
+          
+          renderMessagePreview();
+        }
+        
+        closeFlowSelectionModal();
+      };
+      
+      // Function to close flow selection modal
+      const closeFlowSelectionModal = () => {
+        if (flowSelectionModal) {
+          flowSelectionModal.classList.add("hidden");
+        }
+      };
+      
+      // Function to open flow selection modal
+      const openFlowSelectionModal = (buttonIndex) => {
+        if (!flowSelectionModal) return;
+        
+        // Store current button index
+        flowSelectionModal.dataset.buttonIndex = buttonIndex;
+        flowSelectionModal.dataset.source = "template"; // Mark as from template
+        
+        // Reset to flows tab
+        if (flowTabFlows && flowTabNodes && flowFlowsContent && flowNodesContent) {
+          flowTabFlows.classList.add("border-b-2", "border-blue-500");
+          flowTabFlows.classList.remove("text-slate-500", "dark:text-slate-400");
+          flowTabFlows.classList.add("text-slate-700", "dark:text-slate-300");
+          flowTabNodes.classList.remove("border-b-2", "border-blue-500");
+          flowTabNodes.classList.add("text-slate-500", "dark:text-slate-400");
+          flowTabNodes.classList.remove("text-slate-700", "dark:text-slate-300");
+          flowFlowsContent.classList.remove("hidden");
+          flowNodesContent.classList.add("hidden");
+        }
+        
+        // Reset search and pagination
+        if (flowSearchInput) {
+          flowSearchInput.value = "";
+        }
+        const flowNodesSearchInput = document.getElementById("flow-selection-nodes-search");
+        if (flowNodesSearchInput) {
+          flowNodesSearchInput.value = "";
+        }
+        currentFlowPage = 1;
+        currentNodePage = 1;
+        filteredFlows = [...sampleFlows];
+        filteredNodes = [...sampleNodes];
+        
+        // Helper functions for pagination
+        const updateFlowsPage = (page) => {
+          currentFlowPage = page;
+          renderFlows(filteredFlows, currentFlowPage);
+          renderPagination(flowFlowsPagination, currentFlowPage, Math.ceil(filteredFlows.length / flowsPerPage), updateFlowsPage);
+        };
+        
+        const updateNodesPage = (page) => {
+          currentNodePage = page;
+          renderNodes(filteredNodes, currentNodePage);
+          renderPagination(flowNodesPagination, currentNodePage, Math.ceil(filteredNodes.length / nodesPerPage), updateNodesPage);
+        };
+        
+        // Render initial content
+        renderFlows(filteredFlows, currentFlowPage);
+        renderNodes(filteredNodes, currentNodePage);
+        renderPagination(flowFlowsPagination, currentFlowPage, Math.ceil(filteredFlows.length / flowsPerPage), updateFlowsPage);
+        renderPagination(flowNodesPagination, currentNodePage, Math.ceil(filteredNodes.length / nodesPerPage), updateNodesPage);
+        
+        // Setup modal close handlers
+        const flowSelectionModalClose = document.getElementById("flow-selection-modal-close");
+        const flowSelectionModalCancel = document.getElementById("flow-selection-modal-cancel");
+        
+        // Remove existing listeners and add new ones
+        if (flowSelectionModalClose) {
+          const newCloseBtn = flowSelectionModalClose.cloneNode(true);
+          flowSelectionModalClose.parentNode.replaceChild(newCloseBtn, flowSelectionModalClose);
+          newCloseBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            closeFlowSelectionModal();
+          });
+        }
+        
+        if (flowSelectionModalCancel) {
+          const newCancelBtn = flowSelectionModalCancel.cloneNode(true);
+          flowSelectionModalCancel.parentNode.replaceChild(newCancelBtn, flowSelectionModalCancel);
+          newCancelBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            closeFlowSelectionModal();
+          });
+        }
+        
+        // Close on backdrop click
+        if (flowSelectionModal) {
+          // Remove existing listener if any
+          const newModal = flowSelectionModal.cloneNode(true);
+          flowSelectionModal.parentNode.replaceChild(newModal, flowSelectionModal);
+          newModal.addEventListener("click", (e) => {
+            if (e.target === newModal) {
+              closeFlowSelectionModal();
+            }
+          });
+        }
+        
+        // Show modal
+        flowSelectionModal.classList.remove("hidden");
+      };
+      
+      // Setup tab switching
+      if (flowTabFlows && flowTabNodes && flowFlowsContent && flowNodesContent) {
+        flowTabFlows.addEventListener("click", () => {
+          flowTabFlows.classList.add("border-b-2", "border-blue-500");
+          flowTabFlows.classList.remove("text-slate-500", "dark:text-slate-400");
+          flowTabFlows.classList.add("text-slate-700", "dark:text-slate-300");
+          flowTabNodes.classList.remove("border-b-2", "border-blue-500");
+          flowTabNodes.classList.add("text-slate-500", "dark:text-slate-400");
+          flowTabNodes.classList.remove("text-slate-700", "dark:text-slate-300");
+          flowFlowsContent.classList.remove("hidden");
+          flowNodesContent.classList.add("hidden");
+        });
+        
+        flowTabNodes.addEventListener("click", () => {
+          flowTabNodes.classList.add("border-b-2", "border-blue-500");
+          flowTabNodes.classList.remove("text-slate-500", "dark:text-slate-400");
+          flowTabNodes.classList.add("text-slate-700", "dark:text-slate-300");
+          flowTabFlows.classList.remove("border-b-2", "border-blue-500");
+          flowTabFlows.classList.add("text-slate-500", "dark:text-slate-400");
+          flowTabFlows.classList.remove("text-slate-700", "dark:text-slate-300");
+          flowNodesContent.classList.remove("hidden");
+          flowFlowsContent.classList.add("hidden");
+        });
+      }
+      
+      // Setup search for flows
+      if (flowSearchInput) {
+        flowSearchInput.addEventListener("input", (e) => {
+          const searchTerm = e.target.value.toLowerCase();
+          filteredFlows = sampleFlows.filter(flow => {
+            const name = (lang === "ar" ? flow.name : flow.nameEn).toLowerCase();
+            return name.includes(searchTerm);
+          });
+          currentFlowPage = 1;
+          renderFlows(filteredFlows, currentFlowPage);
+          renderPagination(flowFlowsPagination, currentFlowPage, Math.ceil(filteredFlows.length / flowsPerPage), updateFlowsPage);
+        });
+      }
+      
+      // Setup search for nodes
+      const flowNodesSearchInput = document.getElementById("flow-selection-nodes-search");
+      if (flowNodesSearchInput) {
+        flowNodesSearchInput.addEventListener("input", (e) => {
+          const searchTerm = e.target.value.toLowerCase();
+          filteredNodes = sampleNodes.filter(node => {
+            const nodeName = (lang === "ar" ? node.name : node.nameEn).toLowerCase();
+            const flowName = (lang === "ar" ? node.flowName : node.flowNameEn).toLowerCase();
+            return nodeName.includes(searchTerm) || flowName.includes(searchTerm);
+          });
+          currentNodePage = 1;
+          renderNodes(filteredNodes, currentNodePage);
+          renderPagination(flowNodesPagination, currentNodePage, Math.ceil(filteredNodes.length / nodesPerPage), updateNodesPage);
+        });
+      }
+      
+      // Setup modal close handlers (inside openFlowSelectionModal to ensure they work every time)
+      // Note: These are set up inside openFlowSelectionModal function
+      
+      // Setup flow container click handlers
+      for (let i = 1; i <= 10; i++) {
+        const flowContainer = document.getElementById(`template-button-${i}-flow-container`);
+        
+        if (flowContainer && !flowContainer.dataset.listenerAdded) {
+          flowContainer.dataset.listenerAdded = "true";
+          flowContainer.addEventListener("click", () => {
+            openFlowSelectionModal(i);
+          });
+        }
+      }
+    }
+
+    // Setup input listeners for preview updates
+    const allInputs = templateSettingsContent.querySelectorAll("input, textarea, select");
+    allInputs.forEach(input => {
+      input.addEventListener("input", () => {
+        renderMessagePreview();
+      });
+      input.addEventListener("change", () => {
+        renderMessagePreview();
+      });
+    });
+
+    // Initial preview render
+    renderMessagePreview();
+  }
+
+  // Function to build message from template
+  const buildTemplateMessage = () => {
+    if (!selectedTemplate) return null;
+
+    const lang = document.documentElement.getAttribute("lang") || "ar";
+    
+    // Get current settings values
+    const getSettingValue = (id) => {
+      const input = document.getElementById(id);
+      if (!input) return "";
+      
+      // For contenteditable divs (variable fields)
+      if (input.contentEditable === "true") {
+        // Extract variable keys from tags
+        const tags = input.querySelectorAll(".variable-tag");
+        if (tags.length > 0) {
+          return Array.from(tags).map(tag => tag.getAttribute("data-variable-key") ? `{{${tag.getAttribute("data-variable-key")}}}` : tag.textContent).join(" ");
+        }
+        return input.textContent.trim();
+      }
+      
+      // For regular inputs
+      if (input.value) return input.value;
+      
+      // Check for image preview
+      if (id === "template-header-image") {
+        const preview = document.getElementById("template-header-image-preview");
+        if (preview && preview.src && !preview.classList.contains("hidden")) {
+          return preview.src;
+        }
+      }
+      
+      return "";
+    };
+
+    switch (selectedTemplate.category) {
+      case "MARKETING":
+      case "UTILITY":
+        const headerImagePreview = document.getElementById("template-header-image-preview");
+        const hasUploadedImage = headerImagePreview && headerImagePreview.src && !headerImagePreview.classList.contains("hidden");
+        const imageUrl = hasUploadedImage ? headerImagePreview.src : "";
+        
+        const messageText = selectedTemplate.content || (lang === "ar" ? "نص الرسالة هنا..." : "Message text here...");
+        const variables = [];
+        for (let i = 1; i <= 10; i++) {
+          const varValue = getSettingValue(`template-variable-${i}`);
+          if (varValue) {
+            variables.push(varValue);
+          }
+        }
+        
+        const buttons = [];
+        for (let i = 1; i <= 10; i++) {
+          const flowSelected = document.getElementById(`template-button-${i}-flow-selected`);
+          if (flowSelected && !flowSelected.classList.contains("hidden") && flowSelected.textContent) {
+            buttons.push({ type: "flow", value: flowSelected.textContent.trim() });
+          }
+        }
+        
+        // Build message text with variables
+        let finalMessageText = messageText;
+        if (variables.length > 0) {
+          finalMessageText += "\n\n" + variables.join("\n");
+        }
+        
+        if (imageUrl) {
+          return {
+            type: "image",
+            url: imageUrl,
+            caption: finalMessageText,
+            sender: "me",
+            status: "sent",
+            buttons: buttons.length > 0 ? buttons : undefined,
+          };
+        } else {
+          return {
+            type: "text",
+            text: finalMessageText,
+            sender: "me",
+            status: "sent",
+            buttons: buttons.length > 0 ? buttons : undefined,
+          };
+        }
+
+      case "AUTHENTICATION":
+        const code = getSettingValue("template-verification-code") || "123456";
+        const codeText = lang === "ar" ? `كود التحقق الخاص بك هو:\n${code}` : `Your verification code is:\n${code}`;
+        return {
+          type: "text",
+          text: codeText,
+          sender: "me",
+          status: "sent",
+        };
+
+      default:
+        return {
+          type: "text",
+          text: selectedTemplate.content || "",
+          sender: "me",
+          status: "sent",
+        };
+    }
+  };
+
+  // Send template
+  templateModalSend.addEventListener("click", () => {
+    if (!selectedTemplate) return;
+
+    // Build message from template
+    const messageData = buildTemplateMessage();
+    
+    if (messageData) {
+      // Send message to chat
+      addMessageToChat(messageData);
+      
+      // Close modal
+      closeModal();
+    }
+  });
 }
